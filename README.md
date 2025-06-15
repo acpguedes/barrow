@@ -1,5 +1,6 @@
 # barrow
-A Bash tools to data manipulation using tabular format and based in Apache Arrow 
+A Bash tools to data manipulation using tabular format and based in Apache Arrow
+
 
 ## TODO
 - Create projet structure
@@ -13,3 +14,10 @@ A Bash tools to data manipulation using tabular format and based in Apache Arrow
 - Implement mutate
 - Imprement groupby
 - Implement summary
+
+## Running Tests
+Install `pytest` and run the test suite:
+
+```bash
+pytest
+```
