@@ -1,6 +1,5 @@
 # barrow
-A Bash tools to data manipulation using tabular format and based in Apache Arrow 
-
+A Bash tool for data manipulation using tabular formats, based on Apache Arrow.
 ## TODO
 - Create projet structure
 - Implement STDIN
