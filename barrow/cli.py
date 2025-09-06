@@ -1,30 +1,16 @@
 #!/usr/bin/env python3
-"""Minimal command line interface for barrow."""
+"""Command line interface for barrow."""
+
+from __future__ import annotations
 
 import argparse
-import sys
-import pyarrow.csv as csv
-import pyarrow.parquet as pq
-import pyarrow as pa
 
-
-def read_table(path: str | None) -> pa.Table:
-    """Read a CSV file from the given path or STDIN if path is None."""
-    if path:
-        return csv.read_csv(path)
-    data = sys.stdin.buffer.read()
-    return csv.read_csv(pa.BufferReader(data))
-
-
-def write_table(table: pa.Table, path: str | None) -> None:
-    """Write the table to the given path as parquet or to STDOUT as CSV."""
-    if path:
-        pq.write_table(table, path)
-    else:
-        csv.write_csv(table, sys.stdout)
+from .io import read_table, write_table
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Entry point for the ``barrow`` command line tool."""
+
     parser = argparse.ArgumentParser(description="barrow: simple data tool")
     parser.add_argument("--input", "-i", help="Input CSV file. Reads STDIN if omitted.")
     parser.add_argument("--output", "-o", help="Output parquet file. Writes CSV to STDOUT if omitted.")
@@ -35,5 +21,6 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     raise SystemExit(main())
+
