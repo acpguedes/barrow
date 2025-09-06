@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://acpguedes.github.io/barrow/manifest.schema.json",
+  "title": "OperationManifest",
+  "description": "Serializable description of a Barrow operation.",
+  "type": "object",
+  "required": ["op"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": ["v1"],
+      "default": "v1"
+    },
+    "op": {
+      "type": "string",
+      "enum": [
+        "select",
+        "mutate",
+        "filter",
+        "group",
+        "join",
+        "window",
+        "sql"
+      ],
+      "description": "Operation to execute."
+    },
+    "exprs": {
+      "type": "array",
+      "description": "Expressions used by select/mutate/filter/etc.",
+      "items": { "$ref": "#/$defs/NamedExpr" }
+    },
+    "order_by": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/OrderExpr" }
+    },
+    "limit": { "type": "integer", "minimum": 0 },
+    "by": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Group-by keys"
+    },
+    "aggregations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Aggregation" },
+      "description": "Aggregations computed per group."
+    },
+    "having": { "type": "string", "description": "Filter applied after aggregation." },
+    "left_on": { "type": "string" },
+    "right_on": { "type": "string" },
+    "join_type": {
+      "type": "string",
+      "enum": ["inner", "left", "right", "outer"]
+    },
+    "sql": { "type": "string", "description": "SQL query string when op = 'sql'." }
+  },
+  "$defs": {
+    "NamedExpr": {
+      "type": "object",
+      "required": ["as", "expr"],
+      "properties": {
+        "as": { "type": "string", "description": "Result column name" },
+        "expr": { "type": "string", "description": "BEL expression string" }
+      }
+    },
+    "Aggregation": {
+      "type": "object",
+      "required": ["as", "expr"],
+      "properties": {
+        "as": { "type": "string" },
+        "expr": { "type": "string" }
+      }
+    },
+    "OrderExpr": {
+      "type": "object",
+      "required": ["expr"],
+      "properties": {
+        "expr": { "type": "string" },
+        "desc": { "type": "boolean", "default": false }
+      }
+    }
+  },
+  "additionalProperties": false
+}
