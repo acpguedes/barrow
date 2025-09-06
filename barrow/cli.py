@@ -16,8 +16,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", "-o", help="Output parquet file. Writes CSV to STDOUT if omitted.")
     args = parser.parse_args(argv)
 
-    table = read_table(args.input)
-    write_table(table, args.output)
+    table = read_table(args.input, "csv")
+    write_table(table, args.output, "parquet")
     return 0
 
 
