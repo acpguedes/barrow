@@ -5,6 +5,8 @@ import pyarrow as pa
 import pyarrow.csv as csv
 import pyarrow.parquet as pq
 
+from ..errors import UnsupportedFormatError
+
 
 def read_table(path: str | None, format: str) -> pa.Table:
     """Read a table from ``path`` or ``STDIN``.
@@ -27,4 +29,4 @@ def read_table(path: str | None, format: str) -> pa.Table:
             return pq.read_table(path)
         data = sys.stdin.buffer.read()
         return pq.read_table(pa.BufferReader(data))
-    raise ValueError(f"Unsupported format: {format}")
+    raise UnsupportedFormatError(f"Unsupported format: {format}")

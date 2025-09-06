@@ -5,6 +5,8 @@ import pyarrow as pa
 import pyarrow.csv as csv
 import pyarrow.parquet as pq
 
+from ..errors import UnsupportedFormatError
+
 
 def write_table(table: pa.Table, path: str | None, format: str) -> None:
     """Write ``table`` to ``path`` or ``STDOUT``.
@@ -31,4 +33,4 @@ def write_table(table: pa.Table, path: str | None, format: str) -> None:
         else:
             pq.write_table(table, sys.stdout.buffer)
         return
-    raise ValueError(f"Unsupported format: {format}")
+    raise UnsupportedFormatError(f"Unsupported format: {format}")
