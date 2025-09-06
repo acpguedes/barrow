@@ -1,3 +1,6 @@
+import subprocess
+import sys
+
 from barrow.cli import main
 from barrow.errors import InvalidExpressionError
 import pyarrow.parquet as pq
@@ -15,24 +18,42 @@ def test_cli_returns_error_on_exception(monkeypatch, capsys) -> None:
     assert "bad format" in err
 
 
-def test_filter_and_select(tmp_path) -> None:
-    data = b"name,age\nAlice,25\nBob,35\n"
-    src = tmp_path / "in.csv"
-    src.write_bytes(data)
+def test_filter_and_select(sample_csv, tmp_path) -> None:
     dst = tmp_path / "out.parquet"
 
     rc = main([
         "--input",
-        str(src),
+        sample_csv,
         "--output",
         str(dst),
         "filter",
-        "age > 30",
+        "a > 1",
         "select",
-        "name,age",
+        "b,grp",
     ])
     assert rc == 0
     table = pq.read_table(dst)
-    assert table.column_names == ["name", "age"]
-    assert table.to_pydict() == {"name": ["Bob"], "age": [35]}
+    assert table.column_names == ["b", "grp"]
+    assert table.to_pydict() == {"b": [5, 6], "grp": ["x", "y"]}
 
+
+def test_cli_subprocess(sample_csv, tmp_path) -> None:
+    dst = tmp_path / "out.parquet"
+    cmd = [
+        sys.executable,
+        "-m",
+        "barrow.cli",
+        "--input",
+        sample_csv,
+        "--output",
+        str(dst),
+        "filter",
+        "a > 1",
+        "select",
+        "b,grp",
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    table = pq.read_table(dst)
+    assert table.column_names == ["b", "grp"]
+    assert table.to_pydict() == {"b": [5, 6], "grp": ["x", "y"]}
