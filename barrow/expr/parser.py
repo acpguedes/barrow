@@ -14,6 +14,8 @@ import ast
 import math
 import operator
 
+from ..errors import InvalidExpressionError
+
 
 class Expression:
     """Base class for all expression nodes."""
@@ -132,7 +134,7 @@ def _convert(node: ast.AST) -> Expression:
         return expr
     if isinstance(node, ast.Compare):
         if len(node.ops) != 1 or len(node.comparators) != 1:
-            raise ValueError("Chained comparisons are not supported")
+            raise InvalidExpressionError("Chained comparisons are not supported")
         op_map = {
             ast.Eq: "==",
             ast.NotEq: "!=",
@@ -144,13 +146,13 @@ def _convert(node: ast.AST) -> Expression:
         return BinaryExpression(_convert(node.left), op_map[type(node.ops[0])], _convert(node.comparators[0]))
     if isinstance(node, ast.Call):
         if not isinstance(node.func, ast.Name):
-            raise ValueError("Only simple function calls are supported")
+            raise InvalidExpressionError("Only simple function calls are supported")
         return FunctionCall(node.func.id, [_convert(arg) for arg in node.args])
     if isinstance(node, ast.Name):
         return Name(node.id)
     if isinstance(node, ast.Constant):
         return Literal(node.value)
-    raise ValueError(f"Unsupported expression: {ast.dump(node)}")
+    raise InvalidExpressionError(f"Unsupported expression: {ast.dump(node)}")
 
 
 __all__ = [

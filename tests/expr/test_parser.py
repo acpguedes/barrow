@@ -1,5 +1,7 @@
 import math
+import pytest
 
+from barrow.errors import InvalidExpressionError
 from barrow.expr.parser import (
     BinaryExpression,
     FunctionCall,
@@ -41,3 +43,8 @@ def test_logical_and_function_calls():
     assert expr == expected
     assert expr.evaluate({"active": False, "a": 1, "b": 2}) is True
     assert expr.evaluate({"active": True, "a": 1, "b": 2}) is False
+
+
+def test_chained_comparisons_not_supported():
+    with pytest.raises(InvalidExpressionError):
+        parse("a < b < c")

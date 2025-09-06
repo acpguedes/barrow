@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import argparse
+import sys
 
+from .errors import BarrowError
 from .io import read_table, write_table
 
 
@@ -16,8 +18,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", "-o", help="Output parquet file. Writes CSV to STDOUT if omitted.")
     args = parser.parse_args(argv)
 
-    table = read_table(args.input, "csv")
-    write_table(table, args.output, "parquet")
+    try:
+        table = read_table(args.input, "csv")
+        write_table(table, args.output, "parquet")
+    except BarrowError as exc:  # pragma: no cover - error path
+        print(str(exc), file=sys.stderr)
+        return 1
+
     return 0
 
 

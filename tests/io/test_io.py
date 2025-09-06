@@ -5,7 +5,9 @@ import io
 import sys
 
 import pyarrow as pa
+import pytest
 
+from barrow.errors import UnsupportedFormatError
 from barrow.io import read_table, write_table
 
 
@@ -41,4 +43,15 @@ def test_write_table_to_parquet(tmp_path: Path) -> None:
 
     write_table(table, str(pq_path), "parquet")
     assert pq_path.exists()
+
+
+def test_read_table_unsupported_format() -> None:
+    with pytest.raises(UnsupportedFormatError):
+        read_table("dummy", "json")
+
+
+def test_write_table_unsupported_format() -> None:
+    table = pa.table({"a": [1]})
+    with pytest.raises(UnsupportedFormatError):
+        write_table(table, "dummy", "json")
 
