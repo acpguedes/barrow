@@ -12,6 +12,7 @@ license = {text = "MIT"}
 authors = [{name = "Barrow Developers"}]
 dependencies = [
     "pyarrow",
+    "numpy",
 ]
 
 [project.scripts]
