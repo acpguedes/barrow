@@ -1,7 +1,25 @@
 """Expression system for :mod:`barrow`.
 
-The expression module will provide a small domain specific language to
-describe column transformations.  It currently acts as a placeholder."""
+The expression module provides a small domain specific language to describe
+column transformations.
+"""
 
-__all__: list[str] = []
+from .parser import (
+    Expression,
+    Literal,
+    Name,
+    UnaryExpression,
+    BinaryExpression,
+    FunctionCall,
+    parse,
+)
 
+__all__ = [
+    "Expression",
+    "Literal",
+    "Name",
+    "UnaryExpression",
+    "BinaryExpression",
+    "FunctionCall",
+    "parse",
+]
