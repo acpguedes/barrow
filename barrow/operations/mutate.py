@@ -5,13 +5,16 @@ from __future__ import annotations
 import numpy as np
 import pyarrow as pa
 
+from ..expr import Expression
+from ._expr_eval import evaluate_expression
 
-def mutate(table: pa.Table, **expressions: str) -> pa.Table:
+
+def mutate(table: pa.Table, **expressions: Expression) -> pa.Table:
     """Return a new table with columns created or replaced.
 
     Each keyword argument represents the name of the resulting column and its
-    value is a Python expression evaluated using the existing columns and
-    functions from :mod:`numpy`.
+    value is a Python :class:`~barrow.expr.Expression` evaluated using the
+    existing columns and functions from :mod:`numpy`.
     """
     env: dict[str, object] = {
         name: table[name].to_numpy(zero_copy_only=False) for name in table.column_names
@@ -19,7 +22,7 @@ def mutate(table: pa.Table, **expressions: str) -> pa.Table:
     env.update({name: getattr(np, name) for name in dir(np) if not name.startswith("_")})
     out = table
     for name, expr in expressions.items():
-        value = eval(expr, {"__builtins__": {}}, env)
+        value = evaluate_expression(expr, env)
         arr = pa.array(value)
         if name in out.column_names:
             idx = out.column_names.index(name)

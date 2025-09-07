@@ -8,7 +8,7 @@ import sys
 import pyarrow as pa
 
 from .errors import BarrowError
-from .expr import parse
+from .expr import Expression, parse
 from .io import read_table, write_table
 from .operations import (
     filter as op_filter,
@@ -44,9 +44,9 @@ def main(argv: list[str] | None = None) -> int:
             if op == "filter":
                 if idx >= len(rest):
                     raise BarrowError("filter requires an expression")
-                expr = rest[idx]
+                expr_str = rest[idx]
                 idx += 1
-                parse(expr)
+                expr = parse(expr_str)
                 table = op_filter(table, expr)
             elif op == "select":
                 if idx >= len(rest):
@@ -61,12 +61,12 @@ def main(argv: list[str] | None = None) -> int:
                 assigns = rest[idx]
                 idx += 1
                 pairs = [p.strip() for p in assigns.split(",") if p.strip()]
-                expressions: dict[str, str] = {}
+                expressions: dict[str, Expression] = {}
                 for pair in pairs:
                     if "=" not in pair:
                         raise BarrowError("mutate arguments must be NAME=EXPR")
-                    name, expr = pair.split("=", 1)
-                    expressions[name.strip()] = expr.strip()
+                    name, expr_str = pair.split("=", 1)
+                    expressions[name.strip()] = parse(expr_str.strip())
                 table = op_mutate(table, **expressions)
             elif op == "groupby":
                 if idx >= len(rest):

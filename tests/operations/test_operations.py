@@ -8,6 +8,7 @@ from barrow.operations import (
     groupby,
     summary,
 )
+from barrow.expr import parse
 
 
 def test_select_columns(sample_table):
@@ -21,17 +22,17 @@ def test_select_missing_column(sample_table):
 
 
 def test_filter_rows(sample_table):
-    result = filter_rows(sample_table, "a > 1")
+    result = filter_rows(sample_table, parse("a > 1"))
     assert result["a"].to_pylist() == [2, 3]
 
 
 def test_filter_invalid_expression(sample_table):
     with pytest.raises(NameError):
-        filter_rows(sample_table, "c > 1")
+        filter_rows(sample_table, parse("c > 1"))
 
 
 def test_mutate_columns(sample_table):
-    result = mutate(sample_table, c="a + b", b="b * 2")
+    result = mutate(sample_table, c=parse("a + b"), b=parse("b * 2"))
     assert result.column_names == ["a", "b", "grp", "c"]
     assert result["b"].to_pylist() == [8, 10, 12]
     assert result["c"].to_pylist() == [5, 7, 9]
@@ -39,7 +40,7 @@ def test_mutate_columns(sample_table):
 
 def test_mutate_invalid_expression(sample_table):
     with pytest.raises(NameError):
-        mutate(sample_table, d="unknown + 1")
+        mutate(sample_table, d=parse("unknown + 1"))
 
 
 def test_groupby_summary(parquet_table):
