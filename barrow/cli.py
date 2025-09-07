@@ -16,6 +16,7 @@ from .operations import (
     mutate as op_mutate,
     groupby as op_groupby,
     summary as op_summary,
+    join as op_join,
 )
 
 
@@ -68,6 +69,22 @@ def main(argv: list[str] | None = None) -> int:
                     name, expr_str = pair.split("=", 1)
                     expressions[name.strip()] = parse(expr_str.strip())
                 table = op_mutate(table, **expressions)
+            elif op == "join":
+                if idx + 1 >= len(rest):
+                    raise BarrowError("join requires a file and key specification")
+                path = rest[idx]
+                idx += 1
+                keys_arg = rest[idx]
+                idx += 1
+                if "=" not in keys_arg:
+                    raise BarrowError("join keys must be LEFT=RIGHT")
+                left_on, right_on = [k.strip() for k in keys_arg.split("=", 1)]
+                join_type = "inner"
+                if idx < len(rest) and rest[idx].startswith("--type="):
+                    join_type = rest[idx][7:]
+                    idx += 1
+                right_table = read_table(path, args.input_format)
+                table = op_join(table, right_table, left_on, right_on, join_type)
             elif op == "groupby":
                 if idx >= len(rest):
                     raise BarrowError("groupby requires column names")

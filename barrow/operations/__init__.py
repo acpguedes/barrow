@@ -10,6 +10,7 @@ from .filter import filter
 from .mutate import mutate
 from .groupby import groupby
 from .summary import summary
+from .join import join
 
-__all__ = ["select", "filter", "mutate", "groupby", "summary"]
+__all__ = ["select", "filter", "mutate", "groupby", "summary", "join"]
 
