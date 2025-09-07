@@ -60,3 +60,16 @@ def test_summary_invalid_aggregation(sample_table):
     gb = groupby(sample_table.select(["grp", "a"]), "grp", use_threads=False)
     with pytest.raises(pa.ArrowKeyError):
         summary(gb, {"a": "nonesuch"})
+
+
+def test_filter_unknown_function(sample_table):
+    expr = parse("nosuch(a)")
+    with pytest.raises(NameError):
+        filter_rows(sample_table, expr)
+
+
+def test_mutate_unknown_function(sample_table):
+    expr = parse("nosuch(a)")
+    with pytest.raises(NameError):
+        mutate(sample_table, d=expr)
+
