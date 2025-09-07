@@ -57,3 +57,41 @@ def test_cli_subprocess(sample_csv, tmp_path) -> None:
     table = pq.read_table(dst)
     assert table.column_names == ["b", "grp"]
     assert table.to_pydict() == {"b": [5, 6], "grp": ["x", "y"]}
+
+
+def test_mutate(sample_csv, tmp_path) -> None:
+    dst = tmp_path / "out.parquet"
+
+    rc = main([
+        "--input",
+        sample_csv,
+        "--output",
+        str(dst),
+        "mutate",
+        "c=a+b",
+    ])
+    assert rc == 0
+    table = pq.read_table(dst)
+    assert table.column_names == ["a", "b", "grp", "c"]
+    assert table.to_pydict()["c"] == [5, 7, 9]
+
+
+def test_groupby_summary(sample_csv, tmp_path) -> None:
+    dst = tmp_path / "out.parquet"
+
+    rc = main([
+        "--input",
+        sample_csv,
+        "--output",
+        str(dst),
+        "mutate",
+        "c=a+b",
+        "groupby",
+        "grp",
+        "summary",
+        "c=sum",
+    ])
+    assert rc == 0
+    table = pq.read_table(dst)
+    assert table.column_names == ["grp", "c_sum"]
+    assert table.to_pydict() == {"grp": ["x", "y"], "c_sum": [12, 9]}

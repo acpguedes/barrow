@@ -5,11 +5,18 @@ from __future__ import annotations
 
 import argparse
 import sys
+import pyarrow as pa
 
 from .errors import BarrowError
 from .expr import parse
 from .io import read_table, write_table
-from .operations import filter as op_filter, select as op_select
+from .operations import (
+    filter as op_filter,
+    select as op_select,
+    mutate as op_mutate,
+    groupby as op_groupby,
+    summary as op_summary,
+)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -26,6 +33,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         table = read_table(args.input, "csv")
+        grouped: pa.TableGroupBy | None = None
 
         idx = 0
         while idx < len(rest):
@@ -45,6 +53,42 @@ def main(argv: list[str] | None = None) -> int:
                 idx += 1
                 cols = [c.strip() for c in cols_arg.split(",") if c.strip()]
                 table = op_select(table, cols)
+            elif op == "mutate":
+                if idx >= len(rest):
+                    raise BarrowError("mutate requires column assignments")
+                assigns = rest[idx]
+                idx += 1
+                pairs = [p.strip() for p in assigns.split(",") if p.strip()]
+                expressions: dict[str, str] = {}
+                for pair in pairs:
+                    if "=" not in pair:
+                        raise BarrowError("mutate arguments must be NAME=EXPR")
+                    name, expr = pair.split("=", 1)
+                    expressions[name.strip()] = expr.strip()
+                table = op_mutate(table, **expressions)
+            elif op == "groupby":
+                if idx >= len(rest):
+                    raise BarrowError("groupby requires column names")
+                cols_arg = rest[idx]
+                idx += 1
+                cols = [c.strip() for c in cols_arg.split(",") if c.strip()]
+                grouped = op_groupby(table, cols)
+            elif op == "summary":
+                if grouped is None:
+                    raise BarrowError("summary requires a preceding groupby")
+                if idx >= len(rest):
+                    raise BarrowError("summary requires aggregations")
+                aggs_arg = rest[idx]
+                idx += 1
+                pairs = [p.strip() for p in aggs_arg.split(",") if p.strip()]
+                aggregations: dict[str, str] = {}
+                for pair in pairs:
+                    if "=" not in pair:
+                        raise BarrowError("summary arguments must be COLUMN=AGG")
+                    col, agg = pair.split("=", 1)
+                    aggregations[col.strip()] = agg.strip()
+                table = op_summary(grouped, aggregations)
+                grouped = None
             else:  # pragma: no cover - defensive
                 raise BarrowError(f"Unknown operation: {op}")
 
