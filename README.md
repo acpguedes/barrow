@@ -1,16 +1,12 @@
 # barrow
 A Bash tool for data manipulation using tabular formats, based on Apache Arrow.
-## TODO
-- Create project structure
-- Implement STDIN
-- Implement STDOUT.
-- Implement error class
-- Implement syntax to get expressions from option
-- Implement select
-- Implement filter
-- Implement mutate
-- Implement groupby
-- Implement summary
+It supports common data operations like select, filter, mutate, groupby, and summary, reading
+from files or `STDIN` and writing to files or `STDOUT` in CSV or Parquet format.
+
+## Roadmap
+- Support joins
+- Support window functions
+- Provide a SQL interface
 
 ## Command line usage
 
