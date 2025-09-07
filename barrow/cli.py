@@ -23,16 +23,18 @@ def main(argv: list[str] | None = None) -> int:
     """Entry point for the ``barrow`` command line tool."""
 
     parser = argparse.ArgumentParser(description="barrow: simple data tool")
-    parser.add_argument("--input", "-i", help="Input CSV file. Reads STDIN if omitted.")
+    parser.add_argument("--input", "-i", help="Input file. Reads STDIN if omitted.")
+    parser.add_argument("--input-format", choices=["csv", "parquet"], default="csv")
     parser.add_argument(
         "--output",
         "-o",
-        help="Output parquet file. Writes CSV to STDOUT if omitted.",
+        help="Output file. Writes to STDOUT if omitted.",
     )
+    parser.add_argument("--output-format", choices=["csv", "parquet"], default="parquet")
     args, rest = parser.parse_known_args(argv)
 
     try:
-        table = read_table(args.input, "csv")
+        table = read_table(args.input, args.input_format)
         grouped: pa.TableGroupBy | None = None
 
         idx = 0
@@ -92,7 +94,7 @@ def main(argv: list[str] | None = None) -> int:
             else:  # pragma: no cover - defensive
                 raise BarrowError(f"Unknown operation: {op}")
 
-        write_table(table, args.output, "parquet")
+        write_table(table, args.output, args.output_format)
     except BarrowError as exc:  # pragma: no cover - error path
         print(str(exc), file=sys.stderr)
         return 1

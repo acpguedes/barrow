@@ -1,9 +1,12 @@
 import subprocess
 import sys
 
+import pyarrow.csv as csv
+import pyarrow.parquet as pq
+import pytest
+
 from barrow.cli import main
 from barrow.errors import InvalidExpressionError
-import pyarrow.parquet as pq
 
 
 def test_cli_returns_error_on_exception(monkeypatch, capsys) -> None:
@@ -95,3 +98,33 @@ def test_groupby_summary(sample_csv, tmp_path) -> None:
     table = pq.read_table(dst)
     assert table.column_names == ["grp", "c_sum"]
     assert table.to_pydict() == {"grp": ["x", "y"], "c_sum": [12, 9]}
+
+
+@pytest.mark.parametrize(
+    "input_fixture,input_fmt",
+    [("sample_csv", "csv"), ("sample_parquet", "parquet")],
+)
+@pytest.mark.parametrize(
+    "output_fmt,reader,ext",
+    [("csv", csv.read_csv, ".csv"), ("parquet", pq.read_table, ".parquet")],
+)
+def test_format_combinations(
+    tmp_path, request, sample_table, input_fixture, input_fmt, output_fmt, reader, ext
+) -> None:
+    src = request.getfixturevalue(input_fixture)
+    dst = tmp_path / f"out{ext}"
+    rc = main(
+        [
+            "--input",
+            src,
+            "--input-format",
+            input_fmt,
+            "--output",
+            str(dst),
+            "--output-format",
+            output_fmt,
+        ]
+    )
+    assert rc == 0
+    table = reader(dst)
+    assert table.to_pydict() == sample_table.to_pydict()
