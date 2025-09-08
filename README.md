@@ -4,18 +4,19 @@ It supports common data operations like select, filter, mutate, groupby, and sum
 from files or `STDIN` and writing to files or `STDOUT` in CSV or Parquet format.
 
 ## Roadmap
-- Support joins
 - Support window functions
 - Provide a SQL interface
 
 ## Command line usage
 
 ```
-barrow --input data.csv --input-format csv --output result.parquet --output-format parquet
+barrow filter "a > 1" --input data.csv --output result.parquet
+barrow join id id --input left.csv --right other.parquet --output out.csv
 ```
 
-`--input-format` and `--output-format` accept `csv` or `parquet`. When omitted, the
-defaults are CSV for input and Parquet for output.
+`--input-format` and `--output-format` (and `--right-format` for joins) accept
+`csv` or `parquet`. When omitted, the format is inferred from the file extension
+or, when reading from `STDIN`, from the file's magic bytes.
 
 ## Running tests
 
