@@ -69,16 +69,18 @@ All subcommands accept `--input`/`-i`, `--input-format`, `--output`/`-o`, and `-
 ## Examples
 ### Filter then select
 ```bash
-barrow filter "a > 1" --input data.csv | \
-barrow select "b,grp" --output result.csv
+barrow filter "a > 1" --input data.csv --input-format csv | \
+barrow select "b,grp" --output-format parquet --output result.parquet
 ```
 
 ### Mutate → groupby → summary
 ```bash
-barrow mutate "c=a+b" --input data.csv | \
+barrow mutate "c=a+b" --input data.csv --input-format csv | \
 barrow groupby grp | \
-barrow summary "c=sum" --output out.parquet
+barrow summary "c=sum" --output-format parquet --output out.parquet
 ```
+
+Note: Writing grouped data to CSV drops grouping metadata; use Parquet to preserve it.
 
 These pipelines demonstrate reading from `STDIN` and writing to `STDOUT` while combining operations with pipes.
 
