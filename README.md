@@ -36,7 +36,7 @@ make clean   # remove build artifacts
 ```
 
 ## Usage
-All subcommands accept `--input`/`-i`, `--input-format`, `--output`/`-o`, and `--output-format` to control I/O. These options support `csv` or `parquet`. When omitted, formats are inferred from file extensions or magic bytes when reading from `STDIN`. Leaving out `--input` makes the command read from `STDIN`; omitting `--output` writes to `STDOUT`.
+All subcommands accept `--input`/`-i`, `--input-format`, `--output`/`-o`, and `--output-format` to control I/O. These options support `csv` or `parquet`. When omitted, formats are inferred from file extensions or magic bytes when reading from `STDIN`. Leaving out `--input` makes the command read from `STDIN`; omitting `--output` writes to `STDOUT`. If `--output-format` is not given, the command writes using the input format.
 
 ### filter
 `barrow filter EXPRESSION`
@@ -69,12 +69,14 @@ All subcommands accept `--input`/`-i`, `--input-format`, `--output`/`-o`, and `-
 ## Examples
 ### Filter then select
 ```bash
+# filter outputs CSV by default; select converts to Parquet
 barrow filter "a > 1" --input data.csv --input-format csv | \
 barrow select "b,grp" --output-format parquet --output result.parquet
 ```
 
 ### Mutate → groupby → summary
 ```bash
+# mutate and groupby inherit CSV; summary converts to Parquet
 barrow mutate "c=a+b" --input data.csv --input-format csv | \
 barrow groupby grp | \
 barrow summary "c=sum" --output-format parquet --output out.parquet
