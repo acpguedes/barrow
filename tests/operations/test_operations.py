@@ -1,5 +1,6 @@
 import pyarrow as pa
 import pytest
+import numpy as np
 
 from barrow.operations import (
     select,
@@ -10,6 +11,7 @@ from barrow.operations import (
     ungroup,
 )
 from barrow.expr import parse
+from barrow.operations._env import build_env
 
 
 def test_select_columns(sample_table):
@@ -32,6 +34,11 @@ def test_filter_invalid_expression(sample_table):
         filter_rows(sample_table, parse("c > 1"))
 
 
+def test_filter_numpy_function(sample_table):
+    result = filter_rows(sample_table, parse("sqrt(a) > 1"))
+    assert result["a"].to_pylist() == [2, 3]
+
+
 def test_mutate_columns(sample_table):
     result = mutate(sample_table, c=parse("a + b"), b=parse("b * 2"))
     assert result.column_names == ["a", "b", "grp", "c"]
@@ -42,6 +49,12 @@ def test_mutate_columns(sample_table):
 def test_mutate_invalid_expression(sample_table):
     with pytest.raises(NameError):
         mutate(sample_table, d=parse("unknown + 1"))
+
+
+def test_mutate_numpy_function(sample_table):
+    result = mutate(sample_table, d=parse("sqrt(a) + b"))
+    expected = [np.sqrt(1) + 4, np.sqrt(2) + 5, np.sqrt(3) + 6]
+    assert result["d"].to_pylist() == pytest.approx(expected)
 
 
 def test_groupby_summary(parquet_table):
@@ -80,4 +93,11 @@ def test_mutate_unknown_function(sample_table):
     expr = parse("nosuch(a)")
     with pytest.raises(NameError):
         mutate(sample_table, d=expr)
+
+
+def test_build_env(sample_table):
+    env = build_env(sample_table)
+    assert set(sample_table.column_names).issubset(env)
+    assert env["sqrt"] is np.sqrt
+    assert env["a"].tolist() == [1, 2, 3]
 
