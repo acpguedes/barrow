@@ -36,9 +36,22 @@ def write_table(table: pa.Table, path: str | None, format: str | None) -> None:
         fmt = "csv"
 
     if fmt == "csv":
+        grouped = (
+            table.schema.metadata.get(b"grouped_by")
+            if table.schema.metadata
+            else None
+        )
+        comment = b"# grouped_by: " + grouped + b"\n" if grouped else None
         if path:
-            csv.write_csv(table, path)
+            if comment:
+                with open(path, "wb") as f:
+                    f.write(comment)
+                    csv.write_csv(table, f)
+            else:
+                csv.write_csv(table, path)
         else:
+            if comment:
+                sys.stdout.buffer.write(comment)
             csv.write_csv(table, sys.stdout.buffer)
         return
     if fmt == "parquet":

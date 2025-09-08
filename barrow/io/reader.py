@@ -50,11 +50,30 @@ def read_table(path: str | None, format: str | None) -> pa.Table:
             fmt = _detect_format(None, data)
 
     if fmt == "csv":
+        metadata: dict[bytes, bytes] = {}
+        prefix = b"# grouped_by:"
         if path:
-            return csv.read_csv(path)
-        if data is None:
-            data = sys.stdin.buffer.read()
-        return csv.read_csv(pa.BufferReader(data))
+            with open(path, "rb") as f:
+                first = f.readline()
+                if first.startswith(prefix):
+                    metadata[b"grouped_by"] = first[len(prefix) :].strip()
+                else:
+                    f.seek(0)
+                table = csv.read_csv(f)
+        else:
+            if data is None:
+                data = sys.stdin.buffer.read()
+            if data.startswith(prefix):
+                newline = data.find(b"\n")
+                grouped = data[len(prefix) : newline].strip() if newline != -1 else b""
+                metadata[b"grouped_by"] = grouped
+                data = data[newline + 1 :] if newline != -1 else b""
+            table = csv.read_csv(pa.BufferReader(data))
+        if metadata:
+            table = table.replace_schema_metadata(
+                dict(table.schema.metadata or {}) | metadata
+            )
+        return table
     if fmt == "parquet":
         if path:
             return pq.read_table(path)

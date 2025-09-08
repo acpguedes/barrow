@@ -130,17 +130,26 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("assignments", help="Comma-separated NAME=EXPR pairs")
     p.set_defaults(func=_cmd_mutate)
 
-    p = subparsers.add_parser("groupby", help="Group rows by columns")
+    p = subparsers.add_parser(
+        "groupby",
+        help="Group rows by columns (CSV adds '# grouped_by' comment)",
+    )
     _add_io_options(p)
     p.add_argument("columns", help="Comma-separated column names")
     p.set_defaults(func=_cmd_groupby)
 
-    p = subparsers.add_parser("summary", help="Aggregate grouped table")
+    p = subparsers.add_parser(
+        "summary",
+        help="Aggregate grouped table (keeps '# grouped_by' comment in CSV)",
+    )
     _add_io_options(p)
     p.add_argument("aggregations", help="Comma-separated COLUMN=AGG pairs")
     p.set_defaults(func=_cmd_summary)
 
-    p = subparsers.add_parser("ungroup", help="Remove grouping metadata")
+    p = subparsers.add_parser(
+        "ungroup",
+        help="Remove grouping metadata (drops '# grouped_by' CSV comment)",
+    )
     _add_io_options(p)
     p.set_defaults(func=_cmd_ungroup)
 
