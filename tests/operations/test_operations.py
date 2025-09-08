@@ -7,6 +7,7 @@ from barrow.operations import (
     mutate,
     groupby,
     summary,
+    ungroup,
 )
 from barrow.expr import parse
 
@@ -44,22 +45,29 @@ def test_mutate_invalid_expression(sample_table):
 
 
 def test_groupby_summary(parquet_table):
-    gb = groupby(parquet_table.select(["grp", "a"]), "grp", use_threads=False)
+    gb = groupby(parquet_table.select(["grp", "a"]), "grp")
     result = summary(gb, {"a": "sum"})
     out = dict(zip(result["grp"].to_pylist(), result["a_sum"].to_pylist()))
     assert out == {"x": 3, "y": 3}
 
 
 def test_groupby_invalid_key(sample_table):
-    gb = groupby(sample_table, "missing", use_threads=False)
+    gb = groupby(sample_table, "missing")
     with pytest.raises(pa.ArrowInvalid):
         summary(gb, {"a": "sum"})
 
 
 def test_summary_invalid_aggregation(sample_table):
-    gb = groupby(sample_table.select(["grp", "a"]), "grp", use_threads=False)
+    gb = groupby(sample_table.select(["grp", "a"]), "grp")
     with pytest.raises(pa.ArrowKeyError):
         summary(gb, {"a": "nonesuch"})
+
+
+def test_ungroup_removes_metadata(sample_table):
+    gb = groupby(sample_table, "grp")
+    assert (gb.schema.metadata or {}).get(b"grouped_by") == b"grp"
+    result = ungroup(gb)
+    assert (result.schema.metadata or {}).get(b"grouped_by") is None
 
 
 def test_filter_unknown_function(sample_table):
