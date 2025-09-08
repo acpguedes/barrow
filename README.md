@@ -11,11 +11,19 @@ pip install barrow
 For a development install with linting and testing tools:
 
 ```bash
-pip install -e .[dev]
-pre-commit install
+make install
 ```
 
-Running `pre-commit install` sets up the git hooks for linting, formatting, type checking, and quick tests.
+`make install` installs development dependencies and configures pre-commit hooks.
+
+The Makefile also provides common tasks:
+
+```bash
+make lint    # run linters via pre-commit
+make format  # format code via pre-commit
+make test    # run the test suite
+make clean   # remove build artifacts
+```
 
 ## Usage
 All subcommands accept `--input`/`-i`, `--input-format`, `--output`/`-o`, and `--output-format` to control I/O. These options support `csv` or `parquet`. When omitted, formats are inferred from file extensions or magic bytes when reading from `STDIN`. Leaving out `--input` makes the command read from `STDIN`; omitting `--output` writes to `STDOUT`.
@@ -72,7 +80,7 @@ These pipelines demonstrate reading from `STDIN` and writing to `STDOUT` while c
 Run the test suite with:
 
 ```bash
-pytest
+make test
 ```
 
 Optional dependencies:
