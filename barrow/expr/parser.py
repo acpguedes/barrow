@@ -13,6 +13,9 @@ from typing import Any, Callable, Mapping, Sequence
 import ast
 import math
 import operator
+import re
+import tokenize
+from io import StringIO
 
 from ..errors import InvalidExpressionError
 
@@ -91,6 +94,9 @@ _BINARY_OPERATORS: dict[str, Callable[[Any, Any], Any]] = {
     "<=": operator.le,
     ">": operator.gt,
     ">=": operator.ge,
+    "in": lambda a, b: a in b,
+    "not in": lambda a, b: a not in b,
+    "like": lambda a, b: _like(a, b),
 }
 
 _UNARY_OPERATORS: dict[str, Callable[[Any], Any]] = {
@@ -105,9 +111,27 @@ _FUNCTIONS: dict[str, Callable[..., Any]] = {
 _FUNCTIONS.update({"abs": abs, "max": max, "min": min})
 
 
+def _like(value: str, pattern: str) -> bool:
+    """Simple SQL-like pattern matching."""
+    regex = "^" + re.escape(pattern).replace("%", ".*").replace("_", ".") + "$"
+    return re.match(regex, value) is not None
+
+
+def _replace_like_tokens(expression: str) -> str:
+    tokens = tokenize.generate_tokens(StringIO(expression).readline)
+    new_tokens = []
+    for tok in tokens:
+        if tok.type == tokenize.NAME and tok.string == "like":
+            new_tokens.append(tokenize.TokenInfo(tokenize.OP, "@", tok.start, tok.end, tok.line))
+        else:
+            new_tokens.append(tok)
+    return tokenize.untokenize(new_tokens)
+
+
 def parse(expression: str) -> Expression:
     """Parse ``expression`` into an :class:`Expression` tree."""
 
+    expression = _replace_like_tokens(expression)
     tree = ast.parse(expression, mode="eval")
     return _convert(tree.body)
 
@@ -121,6 +145,7 @@ def _convert(node: ast.AST) -> Expression:
             ast.Div: "/",
             ast.Mod: "%",
             ast.Pow: "**",
+            ast.MatMult: "like",
         }
         return BinaryExpression(_convert(node.left), op_map[type(node.op)], _convert(node.right))
     if isinstance(node, ast.UnaryOp):
@@ -142,6 +167,8 @@ def _convert(node: ast.AST) -> Expression:
             ast.LtE: "<=",
             ast.Gt: ">",
             ast.GtE: ">=",
+            ast.In: "in",
+            ast.NotIn: "not in",
         }
         return BinaryExpression(_convert(node.left), op_map[type(node.ops[0])], _convert(node.comparators[0]))
     if isinstance(node, ast.Call):
@@ -152,6 +179,16 @@ def _convert(node: ast.AST) -> Expression:
         return Name(node.id)
     if isinstance(node, ast.Constant):
         return Literal(node.value)
+    if isinstance(node, (ast.List, ast.Tuple, ast.Set)):
+        elements = [_convert(e) for e in node.elts]
+        if not all(isinstance(e, Literal) for e in elements):
+            raise InvalidExpressionError("Only literal sequences are supported")
+        values = [e.value for e in elements]
+        if isinstance(node, ast.List):
+            return Literal(values)
+        if isinstance(node, ast.Tuple):
+            return Literal(tuple(values))
+        return Literal(set(values))
     raise InvalidExpressionError(f"Unsupported expression: {ast.dump(node)}")
 
 
