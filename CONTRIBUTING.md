@@ -28,3 +28,18 @@ Remove generated files:
 ```bash
 make clean
 ```
+
+## Versioning
+
+This project follows [Semantic Versioning](https://semver.org/), using
+`MAJOR.MINOR.PATCH` numbers to indicate backward-incompatible changes, new
+features, and bug fixes respectively. Releases and the changelog are managed
+with [Commitizen](https://commitizen-tools.github.io/commitizen/). When you're
+ready to cut a new release, run:
+
+```bash
+cz bump
+```
+
+This command updates version numbers and the `CHANGELOG.md` based on commit
+messages that follow the Conventional Commits specification.
