@@ -24,6 +24,7 @@ dev = [
     "black",
     "mypy",
     "argcomplete",
+    "commitizen",
 ]
 docs = [
     "mkdocs>=1.5",
@@ -46,3 +47,14 @@ Usage = "usage.md"
 
 [tool.mkdocs.theme]
 name = "material"
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+version = "0.1.0"
+tag_format = "v$version"
+version_files = [
+    "pyproject.toml:version",
+    "barrow/__init__.py:__version__",
+]
+update_changelog_on_bump = true
+changelog_file = "CHANGELOG.md"
