@@ -44,6 +44,7 @@ def test_filter_and_select_pipeline(sample_csv, tmp_path) -> None:
     ]
     p1 = subprocess.Popen(cmd_filter, stdout=subprocess.PIPE)
     p2 = subprocess.Popen(cmd_select, stdin=p1.stdout)
+    assert p1.stdout is not None
     p1.stdout.close()
     p2.communicate()
 
@@ -108,8 +109,10 @@ def test_groupby_summary_pipeline(sample_csv, tmp_path) -> None:
     ]
     p1 = subprocess.Popen(cmd_mutate, stdout=subprocess.PIPE)
     p2 = subprocess.Popen(cmd_groupby, stdin=p1.stdout, stdout=subprocess.PIPE)
+    assert p1.stdout is not None
     p1.stdout.close()
     p3 = subprocess.Popen(cmd_summary, stdin=p2.stdout)
+    assert p2.stdout is not None
     p2.stdout.close()
     p3.communicate()
 
@@ -198,6 +201,7 @@ def test_ungroup_removes_metadata(sample_csv, tmp_path) -> None:
     ]
     p1 = subprocess.Popen(cmd_groupby, stdout=subprocess.PIPE)
     p2 = subprocess.Popen(cmd_ungroup, stdin=p1.stdout)
+    assert p1.stdout is not None
     p1.stdout.close()
     p2.communicate()
 
