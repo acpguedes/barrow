@@ -8,6 +8,12 @@ Commands read from files or `STDIN` and write to files or `STDOUT` in CSV or Par
 pip install barrow
 ```
 
+For a development install with linting and testing tools:
+
+```bash
+pip install -e .[dev]
+```
+
 ## Usage
 All subcommands accept `--input`/`-i`, `--input-format`, `--output`/`-o`, and `--output-format` to control I/O. These options support `csv` or `parquet`. When omitted, formats are inferred from file extensions or magic bytes when reading from `STDIN`. Leaving out `--input` makes the command read from `STDIN`; omitting `--output` writes to `STDOUT`.
 

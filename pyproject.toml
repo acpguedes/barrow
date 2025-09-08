@@ -16,6 +16,16 @@ dependencies = [
     "duckdb",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pre-commit",
+    "ruff",
+    "black",
+    "mypy",
+    "argcomplete",
+]
+
 [project.scripts]
 barrow = "barrow.cli:main"
 
