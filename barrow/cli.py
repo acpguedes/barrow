@@ -17,6 +17,7 @@ from .operations import (
     groupby as op_groupby,
     summary as op_summary,
     join as op_join,
+    window as op_window,
 )
 
 
@@ -69,6 +70,25 @@ def main(argv: list[str] | None = None) -> int:
                     name, expr_str = pair.split("=", 1)
                     expressions[name.strip()] = parse(expr_str.strip())
                 table = op_mutate(table, **expressions)
+            elif op == "window":
+                by: list[str] | None = None
+                order_by: list[str] | None = None
+                expressions: dict[str, Expression] = {}
+                while idx < len(rest) and "=" in rest[idx]:
+                    token = rest[idx]
+                    if token.startswith("by="):
+                        cols = [c.strip() for c in token[3:].split(",") if c.strip()]
+                        by = cols or None
+                    elif token.startswith("order_by="):
+                        cols = [c.strip() for c in token[9:].split(",") if c.strip()]
+                        order_by = cols or None
+                    else:
+                        name, expr_str = token.split("=", 1)
+                        expressions[name.strip()] = parse(expr_str.strip())
+                    idx += 1
+                if not expressions:
+                    raise BarrowError("window requires column expressions")
+                table = op_window(table, by, order_by, **expressions)
             elif op == "join":
                 if idx + 1 >= len(rest):
                     raise BarrowError("join requires a file and key specification")

@@ -11,6 +11,7 @@ from .mutate import mutate
 from .groupby import groupby
 from .summary import summary
 from .join import join
+from .window import window
 
-__all__ = ["select", "filter", "mutate", "groupby", "summary", "join"]
+__all__ = ["select", "filter", "mutate", "groupby", "summary", "join", "window"]
 
