@@ -1,4 +1,3 @@
-import pyarrow as pa
 import pytest
 
 from barrow.expr import parse
@@ -11,7 +10,9 @@ def test_row_number(sample_table):
 
 
 def test_rolling_mean(sample_table):
-    result = window(sample_table, by=["grp"], order_by=["a"], ma=parse("rolling_mean(a, 2)"))
+    result = window(
+        sample_table, by=["grp"], order_by=["a"], ma=parse("rolling_mean(a, 2)")
+    )
     out = [round(x, 3) for x in result["ma"].to_pylist()]
     assert out == [1.0, 1.5, 3.0]
 

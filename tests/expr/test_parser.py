@@ -1,4 +1,3 @@
-import math
 import pytest
 
 from barrow.errors import InvalidExpressionError
@@ -36,9 +35,7 @@ def test_logical_and_function_calls():
     expected = BinaryExpression(
         UnaryExpression("not", Name("active")),
         "or",
-        BinaryExpression(
-            FunctionCall("max", [Name("a"), Name("b")]), ">", Literal(3)
-        ),
+        BinaryExpression(FunctionCall("max", [Name("a"), Name("b")]), ">", Literal(3)),
     )
     assert expr == expected
     assert expr.evaluate({"active": False, "a": 1, "b": 2}) is True
@@ -58,10 +55,10 @@ def test_membership_operators():
     assert expr.evaluate({"age": 25}) is False
 
     expr = parse("country not in ['US', 'CA']")
-    expected = BinaryExpression(Name("country"), "not in", Literal(['US', 'CA']))
+    expected = BinaryExpression(Name("country"), "not in", Literal(["US", "CA"]))
     assert expr == expected
-    assert expr.evaluate({"country": 'US'}) is False
-    assert expr.evaluate({"country": 'FR'}) is True
+    assert expr.evaluate({"country": "US"}) is False
+    assert expr.evaluate({"country": "FR"}) is True
 
 
 def test_like_operator():
