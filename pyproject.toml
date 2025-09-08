@@ -25,7 +25,24 @@ dev = [
     "mypy",
     "argcomplete",
 ]
+docs = [
+    "mkdocs>=1.5",
+    "mkdocs-material",
+]
 
 [project.scripts]
 barrow = "barrow.cli:main"
 
+
+[tool.mkdocs]
+site_name = "Barrow"
+docs_dir = "docs"
+
+[[tool.mkdocs.nav]]
+Installation = "installation.md"
+
+[[tool.mkdocs.nav]]
+Usage = "usage.md"
+
+[tool.mkdocs.theme]
+name = "material"
