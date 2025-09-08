@@ -2,6 +2,7 @@ site_name: Barrow
 nav:
   - Installation: installation.md
   - Usage: usage.md
+  - Manual: manual.md
 docs_dir: docs
 theme:
   name: material
