@@ -5,27 +5,27 @@ from __future__ import annotations
 
 import argparse
 import sys
-import pyarrow as pa
+
+try:  # pragma: no cover - optional dependency
+    import argcomplete
+except Exception:  # pragma: no cover - optional dependency
+    argcomplete = None
 
 from .errors import BarrowError
 from .expr import Expression, parse
 from .io import read_table, write_table
 from .operations import (
     filter as op_filter,
-    select as op_select,
-    mutate as op_mutate,
     groupby as op_groupby,
+    mutate as op_mutate,
+    select as op_select,
     summary as op_summary,
-    join as op_join,
-    window as op_window,
-    sql as op_sql,
 )
 
 
-def main(argv: list[str] | None = None) -> int:
-    """Entry point for the ``barrow`` command line tool."""
+def _add_io_options(parser: argparse.ArgumentParser) -> None:
+    """Add common I/O options to ``parser``."""
 
-    parser = argparse.ArgumentParser(description="barrow: simple data tool")
     parser.add_argument("--input", "-i", help="Input file. Reads STDIN if omitted.")
     parser.add_argument("--input-format", choices=["csv", "parquet"], default="csv")
     parser.add_argument(
@@ -33,117 +33,129 @@ def main(argv: list[str] | None = None) -> int:
         "-o",
         help="Output file. Writes to STDOUT if omitted.",
     )
-    parser.add_argument("--output-format", choices=["csv", "parquet"], default="parquet")
-    args, rest = parser.parse_known_args(argv)
+    parser.add_argument("--output-format", choices=["csv", "parquet"], default="csv")
 
+
+def _cmd_filter(args: argparse.Namespace) -> int:
+    table = read_table(args.input, args.input_format)
+    expr = parse(args.expression)
+    table = op_filter(table, expr)
+    write_table(table, args.output, args.output_format)
+    return 0
+
+
+def _cmd_select(args: argparse.Namespace) -> int:
+    table = read_table(args.input, args.input_format)
+    cols = [c.strip() for c in args.columns.split(",") if c.strip()]
+    table = op_select(table, cols)
+    write_table(table, args.output, args.output_format)
+    return 0
+
+
+def _cmd_mutate(args: argparse.Namespace) -> int:
+    table = read_table(args.input, args.input_format)
+    pairs = [p.strip() for p in args.assignments.split(",") if p.strip()]
+    expressions: dict[str, Expression] = {}
+    for pair in pairs:
+        if "=" not in pair:
+            raise BarrowError("mutate arguments must be NAME=EXPR")
+        name, expr_str = pair.split("=", 1)
+        expressions[name.strip()] = parse(expr_str.strip())
+    table = op_mutate(table, **expressions)
+    write_table(table, args.output, args.output_format)
+    return 0
+
+
+def _cmd_groupby(args: argparse.Namespace) -> int:
+    table = read_table(args.input, args.input_format)
+    cols = [c.strip() for c in args.columns.split(",") if c.strip()]
+    metadata = dict(table.schema.metadata or {})
+    metadata[b"grouped_by"] = ",".join(cols).encode()
+    table = table.replace_schema_metadata(metadata)
+    write_table(table, args.output, args.output_format)
+    return 0
+
+
+def _cmd_summary(args: argparse.Namespace) -> int:
+    table = read_table(args.input, args.input_format)
+    metadata = table.schema.metadata or {}
+    grouped_by = metadata.get(b"grouped_by")
+    if not grouped_by:
+        raise BarrowError("summary requires grouping metadata")
+    cols = grouped_by.decode().split(",") if grouped_by else []
+    grouped = op_groupby(table, cols)
+    pairs = [p.strip() for p in args.aggregations.split(",") if p.strip()]
+    aggregations: dict[str, str] = {}
+    for pair in pairs:
+        if "=" not in pair:
+            raise BarrowError("summary arguments must be COLUMN=AGG")
+        col, agg = pair.split("=", 1)
+        aggregations[col.strip()] = agg.strip()
+    result = op_summary(grouped, aggregations)
+    result = result.replace_schema_metadata(None)
+    write_table(result, args.output, args.output_format)
+    return 0
+
+
+def _cmd_ungroup(args: argparse.Namespace) -> int:
+    table = read_table(args.input, args.input_format)
+    metadata = dict(table.schema.metadata or {})
+    metadata.pop(b"grouped_by", None)
+    table = table.replace_schema_metadata(metadata or None)
+    write_table(table, args.output, args.output_format)
+    return 0
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """Create and return the top-level argument parser."""
+
+    parser = argparse.ArgumentParser(description="barrow: simple data tool")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    p = subparsers.add_parser("filter", help="Filter rows")
+    _add_io_options(p)
+    p.add_argument("expression", help="Expression to evaluate")
+    p.set_defaults(func=_cmd_filter)
+
+    p = subparsers.add_parser("select", help="Select columns")
+    _add_io_options(p)
+    p.add_argument("columns", help="Comma-separated column names")
+    p.set_defaults(func=_cmd_select)
+
+    p = subparsers.add_parser("mutate", help="Add or modify columns")
+    _add_io_options(p)
+    p.add_argument("assignments", help="Comma-separated NAME=EXPR pairs")
+    p.set_defaults(func=_cmd_mutate)
+
+    p = subparsers.add_parser("groupby", help="Group rows by columns")
+    _add_io_options(p)
+    p.add_argument("columns", help="Comma-separated column names")
+    p.set_defaults(func=_cmd_groupby)
+
+    p = subparsers.add_parser("summary", help="Aggregate grouped table")
+    _add_io_options(p)
+    p.add_argument("aggregations", help="Comma-separated COLUMN=AGG pairs")
+    p.set_defaults(func=_cmd_summary)
+
+    p = subparsers.add_parser("ungroup", help="Remove grouping metadata")
+    _add_io_options(p)
+    p.set_defaults(func=_cmd_ungroup)
+
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Entry point for the ``barrow`` command line tool."""
+
+    parser = build_parser()
+    if argcomplete:  # pragma: no cover - optional dependency
+        argcomplete.autocomplete(parser)
+    args = parser.parse_args(argv)
     try:
-        table = read_table(args.input, args.input_format)
-        grouped: pa.TableGroupBy | None = None
-
-        idx = 0
-        while idx < len(rest):
-            op = rest[idx]
-            idx += 1
-            if op == "filter":
-                if idx >= len(rest):
-                    raise BarrowError("filter requires an expression")
-                expr_str = rest[idx]
-                idx += 1
-                expr = parse(expr_str)
-                table = op_filter(table, expr)
-            elif op == "select":
-                if idx >= len(rest):
-                    raise BarrowError("select requires column names")
-                cols_arg = rest[idx]
-                idx += 1
-                cols = [c.strip() for c in cols_arg.split(",") if c.strip()]
-                table = op_select(table, cols)
-            elif op == "mutate":
-                if idx >= len(rest):
-                    raise BarrowError("mutate requires column assignments")
-                assigns = rest[idx]
-                idx += 1
-                pairs = [p.strip() for p in assigns.split(",") if p.strip()]
-                expressions: dict[str, Expression] = {}
-                for pair in pairs:
-                    if "=" not in pair:
-                        raise BarrowError("mutate arguments must be NAME=EXPR")
-                    name, expr_str = pair.split("=", 1)
-                    expressions[name.strip()] = parse(expr_str.strip())
-                table = op_mutate(table, **expressions)
-            elif op == "window":
-                by: list[str] | None = None
-                order_by: list[str] | None = None
-                expressions: dict[str, Expression] = {}
-                while idx < len(rest) and "=" in rest[idx]:
-                    token = rest[idx]
-                    if token.startswith("by="):
-                        cols = [c.strip() for c in token[3:].split(",") if c.strip()]
-                        by = cols or None
-                    elif token.startswith("order_by="):
-                        cols = [c.strip() for c in token[9:].split(",") if c.strip()]
-                        order_by = cols or None
-                    else:
-                        name, expr_str = token.split("=", 1)
-                        expressions[name.strip()] = parse(expr_str.strip())
-                    idx += 1
-                if not expressions:
-                    raise BarrowError("window requires column expressions")
-                table = op_window(table, by, order_by, **expressions)
-            elif op == "join":
-                if idx + 1 >= len(rest):
-                    raise BarrowError("join requires a file and key specification")
-                path = rest[idx]
-                idx += 1
-                keys_arg = rest[idx]
-                idx += 1
-                if "=" not in keys_arg:
-                    raise BarrowError("join keys must be LEFT=RIGHT")
-                left_on, right_on = [k.strip() for k in keys_arg.split("=", 1)]
-                join_type = "inner"
-                if idx < len(rest) and rest[idx].startswith("--type="):
-                    join_type = rest[idx][7:]
-                    idx += 1
-                right_table = read_table(path, args.input_format)
-                table = op_join(table, right_table, left_on, right_on, join_type)
-            elif op == "sql":
-                if idx >= len(rest):
-                    raise BarrowError("sql requires a query")
-                query = rest[idx]
-                idx += 1
-                table = op_sql(table, query)
-            elif op == "groupby":
-                if idx >= len(rest):
-                    raise BarrowError("groupby requires column names")
-                cols_arg = rest[idx]
-                idx += 1
-                cols = [c.strip() for c in cols_arg.split(",") if c.strip()]
-                grouped = op_groupby(table, cols)
-            elif op == "summary":
-                if grouped is None:
-                    raise BarrowError("summary requires a preceding groupby")
-                if idx >= len(rest):
-                    raise BarrowError("summary requires aggregations")
-                aggs_arg = rest[idx]
-                idx += 1
-                pairs = [p.strip() for p in aggs_arg.split(",") if p.strip()]
-                aggregations: dict[str, str] = {}
-                for pair in pairs:
-                    if "=" not in pair:
-                        raise BarrowError("summary arguments must be COLUMN=AGG")
-                    col, agg = pair.split("=", 1)
-                    aggregations[col.strip()] = agg.strip()
-                table = op_summary(grouped, aggregations)
-                grouped = None
-            else:  # pragma: no cover - defensive
-                raise BarrowError(f"Unknown operation: {op}")
-
-        write_table(table, args.output, args.output_format)
+        return args.func(args)
     except BarrowError as exc:  # pragma: no cover - error path
         print(str(exc), file=sys.stderr)
         return 1
-
-    return 0
 
 
 if __name__ == "__main__":  # pragma: no cover
