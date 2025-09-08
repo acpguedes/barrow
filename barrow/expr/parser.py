@@ -195,8 +195,8 @@ def _convert(node: ast.AST) -> Expression:
         elements = [_convert(e) for e in node.elts]
         if not all(isinstance(e, Literal) for e in elements):
             raise InvalidExpressionError("Only literal sequences are supported")
-        lit_elements = cast(list[Literal], elements)
-        values = [e.value for e in lit_elements]
+        typed_elements = cast(list[Literal], elements)
+        values = [e.value for e in typed_elements]
         if isinstance(node, ast.List):
             return Literal(values)
         if isinstance(node, ast.Tuple):
