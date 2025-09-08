@@ -13,6 +13,7 @@ authors = [{name = "Barrow Developers"}]
 dependencies = [
     "pyarrow",
     "numpy",
+    "duckdb",
 ]
 
 [project.scripts]
