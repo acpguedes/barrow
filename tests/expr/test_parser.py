@@ -47,13 +47,15 @@ def test_chained_comparisons_not_supported():
         parse("a < b < c")
 
 
-def test_membership_operators():
+def test_in_operator():
     expr = parse("age in [20, 30]")
     expected = BinaryExpression(Name("age"), "in", Literal([20, 30]))
     assert expr == expected
     assert expr.evaluate({"age": 20}) is True
     assert expr.evaluate({"age": 25}) is False
 
+
+def test_not_in_operator():
     expr = parse("country not in ['US', 'CA']")
     expected = BinaryExpression(Name("country"), "not in", Literal(["US", "CA"]))
     assert expr == expected
