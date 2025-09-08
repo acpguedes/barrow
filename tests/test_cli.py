@@ -4,6 +4,7 @@ import sys
 import pyarrow as pa
 import pyarrow.csv as csv
 import pyarrow.parquet as pq
+import pytest
 
 from barrow.cli import main
 from barrow.errors import InvalidExpressionError
@@ -122,30 +123,31 @@ def test_groupby_summary_pipeline(sample_csv, tmp_path) -> None:
     assert table.to_pydict() == {"grp": ["x", "y"], "c_sum": [12, 9]}
 
 
-def test_format_combinations(
-    tmp_path, request, sample_table, sample_csv, sample_parquet
+@pytest.mark.parametrize(
+    "src_fixture, reader, ext",
+    [
+        pytest.param("sample_csv", csv.read_csv, ".csv", id="csv"),
+        pytest.param("sample_parquet", pq.read_table, ".parquet", id="parquet"),
+    ],
+)
+def test_select_handles_various_formats(
+    tmp_path, request, sample_table, src_fixture, reader, ext
 ) -> None:
-    src_csv = sample_csv
-    src_parquet = sample_parquet
-    cases = [
-        (src_csv, csv.read_csv, ".csv"),
-        (src_parquet, pq.read_table, ".parquet"),
-    ]
-    for src, reader, ext in cases:
-        dst = tmp_path / f"out{ext}"
-        rc = main(
-            [
-                "select",
-                "a,b,grp",
-                "--input",
-                src,
-                "--output",
-                str(dst),
-            ]
-        )
-        assert rc == 0
-        table = reader(dst)
-        assert table.to_pydict() == sample_table.to_pydict()
+    src = request.getfixturevalue(src_fixture)
+    dst = tmp_path / f"out{ext}"
+    rc = main(
+        [
+            "select",
+            "a,b,grp",
+            "--input",
+            src,
+            "--output",
+            str(dst),
+        ]
+    )
+    assert rc == 0
+    table = reader(dst)
+    assert table.to_pydict() == sample_table.to_pydict()
 
 
 def test_join_cli_infers_formats(tmp_path) -> None:
@@ -208,4 +210,3 @@ def test_ungroup_removes_metadata(sample_csv, tmp_path) -> None:
     assert p2.returncode == 0
     table = pq.read_table(dst)
     assert (table.schema.metadata or {}).get(b"grouped_by") is None
-
