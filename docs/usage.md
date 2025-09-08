@@ -14,8 +14,8 @@ barrow groupby category | \
 barrow summary "revenue=sum(total)" --output-format parquet --output report.parquet
 ```
 This pipeline joins two datasets on `id`, computes a new column, groups by `category`, and writes aggregated revenue to a Parquet file.
-
-Note: Writing grouped data to CSV drops grouping metadata; use Parquet to preserve it.
+When writing grouped data to CSV, grouping information is stored in a leading
+comment line of the form `# grouped_by: col1,col2` and is restored on read.
 
 ### Streaming Filters and Projections
 ```bash
