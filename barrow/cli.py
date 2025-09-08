@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 import sys
 
 try:  # pragma: no cover - optional dependency
@@ -26,7 +27,11 @@ from .operations import (
 
 
 def _add_io_options(parser: argparse.ArgumentParser) -> None:
-    """Add common I/O options to ``parser``."""
+    """Add common I/O options to ``parser``.
+
+    When ``--output-format`` is omitted, the output format defaults to the
+    input format.
+    """
 
     parser.add_argument("--input", "-i", help="Input file. Reads STDIN if omitted.")
     parser.add_argument(
@@ -41,8 +46,27 @@ def _add_io_options(parser: argparse.ArgumentParser) -> None:
         "--output-format", choices=["csv", "parquet"], help="Output format"
     )
 
+    def _set_io_defaults(args: argparse.Namespace) -> None:
+        if args.output_format is None:
+            if args.input_format is not None:
+                args.output_format = args.input_format
+            elif args.input:
+                ext = Path(args.input).suffix.lower()
+                if ext == ".csv":
+                    args.output_format = "csv"
+                elif ext == ".parquet":
+                    args.output_format = "parquet"
+
+    parser.set_defaults(_set_io_defaults=_set_io_defaults)
+
 
 def _cmd_filter(args: argparse.Namespace) -> int:
+    """Filter rows.
+
+    The output format defaults to the input format when ``--output-format`` is
+    not specified.
+    """
+
     table = read_table(args.input, args.input_format)
     expr = parse(args.expression)
     table = op_filter(table, expr)
@@ -51,6 +75,12 @@ def _cmd_filter(args: argparse.Namespace) -> int:
 
 
 def _cmd_select(args: argparse.Namespace) -> int:
+    """Select columns.
+
+    Output format inherits from the input format unless ``--output-format`` is
+    provided.
+    """
+
     table = read_table(args.input, args.input_format)
     cols = [c.strip() for c in args.columns.split(",") if c.strip()]
     table = op_select(table, cols)
@@ -59,6 +89,12 @@ def _cmd_select(args: argparse.Namespace) -> int:
 
 
 def _cmd_mutate(args: argparse.Namespace) -> int:
+    """Add or modify columns.
+
+    Unless ``--output-format`` is specified, the input format is used for the
+    output.
+    """
+
     table = read_table(args.input, args.input_format)
     pairs = [p.strip() for p in args.assignments.split(",") if p.strip()]
     expressions: dict[str, Expression] = {}
@@ -73,6 +109,11 @@ def _cmd_mutate(args: argparse.Namespace) -> int:
 
 
 def _cmd_groupby(args: argparse.Namespace) -> int:
+    """Group rows by columns.
+
+    When ``--output-format`` is omitted, the output matches the input format.
+    """
+
     table = read_table(args.input, args.input_format)
     cols = [c.strip() for c in args.columns.split(",") if c.strip()]
     table = op_groupby(table, cols)
@@ -81,6 +122,11 @@ def _cmd_groupby(args: argparse.Namespace) -> int:
 
 
 def _cmd_summary(args: argparse.Namespace) -> int:
+    """Aggregate a grouped table.
+
+    The output uses the input format unless ``--output-format`` is given.
+    """
+
     table = read_table(args.input, args.input_format)
     pairs = [p.strip() for p in args.aggregations.split(",") if p.strip()]
     aggregations: dict[str, str] = {}
@@ -95,6 +141,11 @@ def _cmd_summary(args: argparse.Namespace) -> int:
 
 
 def _cmd_ungroup(args: argparse.Namespace) -> int:
+    """Remove grouping metadata.
+
+    Output format defaults to the input format when not specified.
+    """
+
     table = read_table(args.input, args.input_format)
     table = op_ungroup(table)
     write_table(table, args.output, args.output_format)
@@ -102,6 +153,12 @@ def _cmd_ungroup(args: argparse.Namespace) -> int:
 
 
 def _cmd_join(args: argparse.Namespace) -> int:
+    """Join two tables.
+
+    Unless ``--output-format`` is supplied, the output format matches the
+    input.
+    """
+
     left = read_table(args.input, args.input_format)
     right = read_table(args.right, args.right_format)
     result = op_join(left, right, args.left_on, args.right_on, args.join_type)
@@ -178,6 +235,8 @@ def main(argv: list[str] | None = None) -> int:
     if argcomplete:  # pragma: no cover - optional dependency
         argcomplete.autocomplete(parser)
     args = parser.parse_args(argv)
+    if hasattr(args, "_set_io_defaults"):
+        args._set_io_defaults(args)
     try:
         return args.func(args)
     except BarrowError as exc:  # pragma: no cover - error path
