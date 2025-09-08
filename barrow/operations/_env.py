@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Common environment for expression evaluation."""
+
+from __future__ import annotations
 
 import numpy as np
 import pyarrow as pa
@@ -14,12 +14,12 @@ def build_env(table: pa.Table) -> dict[str, object]:
     """
 
     env: dict[str, object] = {
-        name: table[name].to_numpy(zero_copy_only=False)
-        for name in table.column_names
+        name: table[name].to_numpy(zero_copy_only=False) for name in table.column_names
     }
-    env.update({name: getattr(np, name) for name in dir(np) if not name.startswith("_")})
+    env.update(
+        {name: getattr(np, name) for name in dir(np) if not name.startswith("_")}
+    )
     return env
 
 
 __all__ = ["build_env"]
-

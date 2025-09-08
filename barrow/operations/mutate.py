@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Column creation and transformation operation."""
+
+from __future__ import annotations
 
 import pyarrow as pa
 
