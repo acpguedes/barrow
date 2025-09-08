@@ -25,6 +25,22 @@ barrow sort "score" --descending --output-format parquet --output top.parquet
 ```
 Use streaming operations to filter, project, and sort large datasets without loading them entirely into memory.
 
+### Inspecting Results
+When working with binary formats like Parquet, append `view` to a pipeline to
+inspect the data in a human-readable form:
+
+```bash
+barrow summary "revenue=sum(total)" --output-format parquet | \
+barrow view
+```
+
+`view` ignores `--output-format` and always prints text (CSV) to `STDOUT`. It
+can also read directly from a file:
+
+```bash
+barrow view -i data.parquet
+```
+
 ## Performance Tips
 - Prefer the Parquet format for large datasets to leverage Arrow's columnar layout.
 - Provide explicit `--input-format` and `--output-format` to avoid format detection overhead.
