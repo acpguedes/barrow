@@ -166,6 +166,18 @@ def _cmd_join(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_view(args: argparse.Namespace) -> int:
+    """Display a table in a human-readable form.
+
+    ``--output-format`` is accepted for API compatibility but ignored, and the
+    table is always written to ``STDOUT`` in CSV format.
+    """
+
+    table = read_table(args.input, args.input_format)
+    write_table(table, None, "csv")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Create and return the top-level argument parser."""
 
@@ -224,6 +236,16 @@ def build_parser() -> argparse.ArgumentParser:
         default="inner",
     )
     p.set_defaults(func=_cmd_join)
+
+    p = subparsers.add_parser("view", help="Display table in human-readable text")
+    p.add_argument("--input", "-i", help="Input file. Reads STDIN if omitted.")
+    p.add_argument("--input-format", choices=["csv", "parquet"], help="Input format")
+    p.add_argument(
+        "--output-format",
+        choices=["csv", "parquet"],
+        help="Output format (ignored)",
+    )
+    p.set_defaults(func=_cmd_view)
 
     return parser
 
