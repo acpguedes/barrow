@@ -16,6 +16,16 @@ make install
 
 `make install` installs development dependencies and configures pre-commit hooks.
 
+To create an isolated environment with autocompletion, run:
+```bash
+source scripts/setup_env.sh
+```
+A minimal Dockerfile is available for container usage:
+```bash
+docker build -t barrow .
+docker run --rm barrow --help
+```
+
 The Makefile also provides common tasks:
 
 ```bash

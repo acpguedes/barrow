@@ -17,6 +17,20 @@ pip install -e .[dev,docs]
 ```
 This installs linting tools, test runners and documentation tooling like MkDocs.
 
+## Using the setup script
+To create an isolated development environment with shell completion, run:
+```bash
+source scripts/setup_env.sh
+```
+This creates a virtual environment in `.venv`, installs development dependencies and enables `barrow` tab completion for the current shell.
+
+## Running with Docker
+A minimal Dockerfile is provided to run `barrow` in a container:
+```bash
+docker build -t barrow .
+docker run --rm -it barrow --help
+```
+
 ## Verifying the Installation
 After installation, verify that the CLI works:
 ```bash
