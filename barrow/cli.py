@@ -17,6 +17,7 @@ from .io import read_table, write_table
 from .operations import (
     filter as op_filter,
     groupby as op_groupby,
+    join as op_join,
     mutate as op_mutate,
     select as op_select,
     summary as op_summary,
@@ -28,13 +29,15 @@ def _add_io_options(parser: argparse.ArgumentParser) -> None:
     """Add common I/O options to ``parser``."""
 
     parser.add_argument("--input", "-i", help="Input file. Reads STDIN if omitted.")
-    parser.add_argument("--input-format", choices=["csv", "parquet"], default="csv")
+    parser.add_argument("--input-format", choices=["csv", "parquet"], help="Input format")
     parser.add_argument(
         "--output",
         "-o",
         help="Output file. Writes to STDOUT if omitted.",
     )
-    parser.add_argument("--output-format", choices=["csv", "parquet"], default="csv")
+    parser.add_argument(
+        "--output-format", choices=["csv", "parquet"], help="Output format"
+    )
 
 
 def _cmd_filter(args: argparse.Namespace) -> int:
@@ -96,6 +99,14 @@ def _cmd_ungroup(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_join(args: argparse.Namespace) -> int:
+    left = read_table(args.input, args.input_format)
+    right = read_table(args.right, args.right_format)
+    result = op_join(left, right, args.left_on, args.right_on, args.join_type)
+    write_table(result, args.output, args.output_format)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Create and return the top-level argument parser."""
 
@@ -130,6 +141,21 @@ def build_parser() -> argparse.ArgumentParser:
     p = subparsers.add_parser("ungroup", help="Remove grouping metadata")
     _add_io_options(p)
     p.set_defaults(func=_cmd_ungroup)
+
+    p = subparsers.add_parser("join", help="Join two tables")
+    _add_io_options(p)
+    p.add_argument("left_on", help="Join key in the left table")
+    p.add_argument("right_on", help="Join key in the right table")
+    p.add_argument("--right", required=True, help="Right input file")
+    p.add_argument(
+        "--right-format", choices=["csv", "parquet"], help="Right file format"
+    )
+    p.add_argument(
+        "--join-type",
+        choices=["inner", "left", "right", "outer"],
+        default="inner",
+    )
+    p.set_defaults(func=_cmd_join)
 
     return parser
 

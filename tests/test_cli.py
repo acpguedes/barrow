@@ -1,6 +1,7 @@
 import subprocess
 import sys
 
+import pyarrow as pa
 import pyarrow.csv as csv
 import pyarrow.parquet as pq
 
@@ -63,8 +64,6 @@ def test_mutate_from_stdin(sample_csv, tmp_path) -> None:
         "c=a+b",
         "--output",
         str(dst),
-        "--output-format",
-        "parquet",
     ]
     with open(sample_csv, "rb") as f:
         result = subprocess.run(cmd, stdin=f, capture_output=True)
@@ -95,8 +94,6 @@ def test_groupby_summary_pipeline(sample_csv, tmp_path) -> None:
         "barrow.cli",
         "groupby",
         "grp",
-        "--input-format",
-        "parquet",
         "--output-format",
         "parquet",
     ]
@@ -106,12 +103,8 @@ def test_groupby_summary_pipeline(sample_csv, tmp_path) -> None:
         "barrow.cli",
         "summary",
         "c=sum",
-        "--input-format",
-        "parquet",
         "--output",
         str(dst),
-        "--output-format",
-        "parquet",
     ]
     p1 = subprocess.Popen(cmd_mutate, stdout=subprocess.PIPE)
     p2 = subprocess.Popen(cmd_groupby, stdin=p1.stdout, stdout=subprocess.PIPE)
@@ -132,10 +125,10 @@ def test_format_combinations(
     src_csv = sample_csv
     src_parquet = sample_parquet
     cases = [
-        (src_csv, "csv", "csv", csv.read_csv, ".csv"),
-        (src_parquet, "parquet", "parquet", pq.read_table, ".parquet"),
+        (src_csv, csv.read_csv, ".csv"),
+        (src_parquet, pq.read_table, ".parquet"),
     ]
-    for src, input_fmt, output_fmt, reader, ext in cases:
+    for src, reader, ext in cases:
         dst = tmp_path / f"out{ext}"
         rc = main(
             [
@@ -143,17 +136,42 @@ def test_format_combinations(
                 "a,b,grp",
                 "--input",
                 src,
-                "--input-format",
-                input_fmt,
                 "--output",
                 str(dst),
-                "--output-format",
-                output_fmt,
             ]
         )
         assert rc == 0
         table = reader(dst)
         assert table.to_pydict() == sample_table.to_pydict()
+
+
+def test_join_cli_infers_formats(tmp_path) -> None:
+    left = pa.table({"id": [1, 2], "left_val": ["a", "b"]})
+    right = pa.table({"id": [1], "right_val": ["x"]})
+    left_path = tmp_path / "left.csv"
+    right_path = tmp_path / "right.parquet"
+    out_path = tmp_path / "out.csv"
+    csv.write_csv(left, left_path)
+    pq.write_table(right, right_path)
+
+    cmd = [
+        sys.executable,
+        "-m",
+        "barrow.cli",
+        "join",
+        "id",
+        "id",
+        "--input",
+        str(left_path),
+        "--right",
+        str(right_path),
+        "--output",
+        str(out_path),
+    ]
+    result = subprocess.run(cmd, capture_output=True)
+    assert result.returncode == 0, result.stderr
+    table = csv.read_csv(out_path)
+    assert table.to_pylist() == [{"id": 1, "left_val": "a", "right_val": "x"}]
 
 
 def test_ungroup_removes_metadata(sample_csv, tmp_path) -> None:
@@ -175,12 +193,8 @@ def test_ungroup_removes_metadata(sample_csv, tmp_path) -> None:
         "-m",
         "barrow.cli",
         "ungroup",
-        "--input-format",
-        "parquet",
         "--output",
         str(dst),
-        "--output-format",
-        "parquet",
     ]
     p1 = subprocess.Popen(cmd_groupby, stdout=subprocess.PIPE)
     p2 = subprocess.Popen(cmd_ungroup, stdin=p1.stdout)

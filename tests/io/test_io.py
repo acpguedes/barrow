@@ -5,44 +5,66 @@ import io
 import sys
 
 import pyarrow as pa
+import pyarrow.csv as csv
+import pyarrow.parquet as pq
 import pytest
 
 from barrow.errors import UnsupportedFormatError
 from barrow.io import read_table, write_table
 
 
-def test_read_table_from_path(tmp_path: Path) -> None:
+def test_read_table_infers_format_from_extension(tmp_path: Path) -> None:
     data = "a,b\n1,2\n"
     csv_path = tmp_path / "input.csv"
     csv_path.write_text(data)
-
-    table = read_table(str(csv_path), "csv")
+    table = read_table(str(csv_path), None)
     assert table.to_pylist() == [{"a": 1, "b": 2}]
 
+    pq_path = tmp_path / "input.parquet"
+    pq.write_table(pa.table({"a": [1]}), pq_path)
+    table = read_table(str(pq_path), None)
+    assert table.to_pydict() == {"a": [1]}
 
-def test_read_table_from_stdin(monkeypatch) -> None:
+
+def test_read_table_from_stdin_csv(monkeypatch) -> None:
     data = b"a,b\n1,2\n"
-    stdin = io.BytesIO(data)
-    monkeypatch.setattr(sys, "stdin", io.TextIOWrapper(stdin, encoding="utf-8"))
 
-    table = read_table(None, "csv")
+    class Dummy:
+        def __init__(self, d: bytes) -> None:
+            self.buffer = io.BytesIO(d)
+
+    monkeypatch.setattr(sys, "stdin", Dummy(data))
+    table = read_table(None, None)
     assert table.to_pylist() == [{"a": 1, "b": 2}]
 
 
-def test_write_table_to_stdout(capsys) -> None:
+def test_read_table_from_stdin_parquet(monkeypatch) -> None:
+    buf = io.BytesIO()
+    pq.write_table(pa.table({"a": [1]}), buf)
+
+    class Dummy:
+        def __init__(self, d: bytes) -> None:
+            self.buffer = io.BytesIO(d)
+
+    monkeypatch.setattr(sys, "stdin", Dummy(buf.getvalue()))
+    table = read_table(None, None)
+    assert table.to_pydict() == {"a": [1]}
+
+
+def test_write_table_to_stdout_defaults_csv(capsys) -> None:
     table = pa.table({"a": [1]})
-    write_table(table, None, "csv")
+    write_table(table, None, None)
     out = capsys.readouterr().out.strip().splitlines()
     assert out[0] == '"a"'
     assert out[1] == "1"
 
 
-def test_write_table_to_parquet(tmp_path: Path) -> None:
+def test_write_table_infers_from_extension(tmp_path: Path) -> None:
     table = pa.table({"a": [1]})
     pq_path = tmp_path / "output.parquet"
 
-    write_table(table, str(pq_path), "parquet")
-    assert pq_path.exists()
+    write_table(table, str(pq_path), None)
+    assert pq.read_table(pq_path).to_pydict() == {"a": [1]}
 
 
 def test_read_table_unsupported_format() -> None:
