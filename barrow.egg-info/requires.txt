@@ -1,0 +1,16 @@
+pyarrow
+numpy
+duckdb
+
+[dev]
+pytest
+pre-commit
+ruff
+black
+mypy
+argcomplete
+commitizen
+
+[docs]
+mkdocs>=1.5
+mkdocs-material

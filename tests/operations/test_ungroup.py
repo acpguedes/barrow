@@ -10,4 +10,3 @@ def test_ungroup_removes_metadata(sample_table, caplog):
         result = ungroup(gb)
     assert (result.schema.metadata or {}).get(b"grouped_by") is None
     assert "Ungrouping table" in caplog.text
-

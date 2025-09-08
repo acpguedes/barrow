@@ -65,4 +65,3 @@ def read_table(path: str | None, format: str | None) -> pa.Table:
 
 
 __all__ = ["read_table"]
-

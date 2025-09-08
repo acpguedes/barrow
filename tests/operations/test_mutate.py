@@ -36,4 +36,3 @@ def test_mutate_unknown_function(sample_table, caplog):
         with pytest.raises(NameError):
             mutate(sample_table, d=expr)
     assert "Evaluating expression for column 'd'" in caplog.text
-

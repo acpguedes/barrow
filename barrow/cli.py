@@ -29,7 +29,9 @@ def _add_io_options(parser: argparse.ArgumentParser) -> None:
     """Add common I/O options to ``parser``."""
 
     parser.add_argument("--input", "-i", help="Input file. Reads STDIN if omitted.")
-    parser.add_argument("--input-format", choices=["csv", "parquet"], help="Input format")
+    parser.add_argument(
+        "--input-format", choices=["csv", "parquet"], help="Input format"
+    )
     parser.add_argument(
         "--output",
         "-o",
@@ -176,4 +178,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":  # pragma: no cover
     raise SystemExit(main())
-

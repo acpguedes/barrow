@@ -35,4 +35,3 @@ def test_missing_function_name_in_error():
     with pytest.raises(NameError) as excinfo:
         evaluate_expression(expr, {})
     assert "name 'unknown_func' is not defined" in str(excinfo.value)
-

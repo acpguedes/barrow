@@ -36,4 +36,3 @@ def test_select_missing_column(sample_table, cols, caplog):
     assert (
         f"Selecting columns {cols}" in caplog.text
     ), f"Missing log entry for selecting {cols}"
-

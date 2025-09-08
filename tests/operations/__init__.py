@@ -23,4 +23,3 @@ __all__ = [
     "test_sql",
     "test_window",
 ]
-

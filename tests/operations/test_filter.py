@@ -32,10 +32,9 @@ def test_filter_invalid_expression(sample_table, expr_str, caplog):
         with pytest.raises(NameError) as exc_info:
             filter_rows(sample_table, parse(expr_str))
     token = expr_str.split("(")[0].split()[0]
-    assert (
-        token in str(exc_info.value)
+    assert token in str(
+        exc_info.value
     ), f"Error message does not reference '{token}': {exc_info.value}"
     assert (
         "Filtering with expression" in caplog.text
     ), f"Missing log entry for expression '{expr_str}'"
-

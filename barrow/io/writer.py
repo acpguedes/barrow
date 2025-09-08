@@ -51,4 +51,3 @@ def write_table(table: pa.Table, path: str | None, format: str | None) -> None:
 
 
 __all__ = ["write_table"]
-

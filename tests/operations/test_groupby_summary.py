@@ -31,4 +31,3 @@ def test_summary_invalid_aggregation(sample_table, caplog):
             summary(gb, {"a": "nonesuch"})
     assert "Grouping with keys ['grp']" in caplog.text
     assert "Summarizing with aggregations {'a': 'nonesuch'}" in caplog.text
-
