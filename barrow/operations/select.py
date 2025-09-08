@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Column selection operation."""
+
+from __future__ import annotations
 
 import pyarrow as pa
 

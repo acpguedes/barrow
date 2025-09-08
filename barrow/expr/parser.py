@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Parse simple expressions into an abstract syntax tree.
 
 The parser translates strings like ``"age > 30"`` into expression objects
@@ -8,14 +6,16 @@ a small subset of Python expressions is supported including arithmetic,
 comparisons, boolean operations and calls to a restricted set of functions.
 """
 
-from dataclasses import dataclass
-from typing import Any, Callable, Mapping, Sequence
+from __future__ import annotations
+
 import ast
 import math
 import operator
 import re
 import tokenize
+from dataclasses import dataclass
 from io import StringIO
+from typing import Any, Callable, Mapping, Sequence
 
 from ..errors import InvalidExpressionError
 
@@ -122,7 +122,9 @@ def _replace_like_tokens(expression: str) -> str:
     new_tokens = []
     for tok in tokens:
         if tok.type == tokenize.NAME and tok.string == "like":
-            new_tokens.append(tokenize.TokenInfo(tokenize.OP, "@", tok.start, tok.end, tok.line))
+            new_tokens.append(
+                tokenize.TokenInfo(tokenize.OP, "@", tok.start, tok.end, tok.line)
+            )
         else:
             new_tokens.append(tok)
     return tokenize.untokenize(new_tokens)
@@ -147,7 +149,9 @@ def _convert(node: ast.AST) -> Expression:
             ast.Pow: "**",
             ast.MatMult: "like",
         }
-        return BinaryExpression(_convert(node.left), op_map[type(node.op)], _convert(node.right))
+        return BinaryExpression(
+            _convert(node.left), op_map[type(node.op)], _convert(node.right)
+        )
     if isinstance(node, ast.UnaryOp):
         op_map = {ast.Not: "not", ast.USub: "-", ast.UAdd: "+"}
         return UnaryExpression(op_map[type(node.op)], _convert(node.operand))
@@ -170,7 +174,11 @@ def _convert(node: ast.AST) -> Expression:
             ast.In: "in",
             ast.NotIn: "not in",
         }
-        return BinaryExpression(_convert(node.left), op_map[type(node.ops[0])], _convert(node.comparators[0]))
+        return BinaryExpression(
+            _convert(node.left),
+            op_map[type(node.ops[0])],
+            _convert(node.comparators[0]),
+        )
     if isinstance(node, ast.Call):
         if not isinstance(node.func, ast.Name):
             raise InvalidExpressionError("Only simple function calls are supported")

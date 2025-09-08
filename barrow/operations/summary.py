@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Aggregation helpers for grouped tables."""
+
+from __future__ import annotations
 
 from collections.abc import Mapping
 
@@ -9,7 +9,9 @@ import pyarrow as pa
 from ..errors import BarrowError
 
 
-def summary(table: pa.Table, aggregations: Mapping[str, str] | None = None, **kwargs: str) -> pa.Table:
+def summary(
+    table: pa.Table, aggregations: Mapping[str, str] | None = None, **kwargs: str
+) -> pa.Table:
     """Aggregate ``table`` according to ``aggregations`` using grouping metadata."""
     metadata = table.schema.metadata or {}
     grouped_by = metadata.get(b"grouped_by")

@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Execute SQL queries using DuckDB."""
+
+from __future__ import annotations
 
 import duckdb
 import pyarrow as pa

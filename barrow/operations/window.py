@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Window functions for :mod:`barrow`."""
+
+from __future__ import annotations
 
 import numpy as np
 import pyarrow as pa
@@ -68,7 +68,9 @@ def window(
         offsets = [0, n]
 
     # Environment for expression evaluation (sorted order)
-    env: dict[str, pa.Array] = {name: sorted_table[name] for name in sorted_table.column_names}
+    env: dict[str, pa.Array] = {
+        name: sorted_table[name] for name in sorted_table.column_names
+    }
 
     def row_number() -> pa.Array:
         out = np.empty(n, dtype=np.int64)
@@ -96,14 +98,16 @@ def window(
             denom[start:stop] = np.minimum(np.arange(1, length + 1), window)
         return pa.array(rs / denom)
 
-    env.update({
-        name: getattr(pc, name) for name in dir(pc) if not name.startswith("_")
-    })
-    env.update({
-        "row_number": row_number,
-        "rolling_sum": rolling_sum,
-        "rolling_mean": rolling_mean,
-    })
+    env.update(
+        {name: getattr(pc, name) for name in dir(pc) if not name.startswith("_")}
+    )
+    env.update(
+        {
+            "row_number": row_number,
+            "rolling_sum": rolling_sum,
+            "rolling_mean": rolling_mean,
+        }
+    )
 
     out = table
     for name, expr in expressions.items():

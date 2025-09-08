@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Table join operation."""
+
+from __future__ import annotations
 
 import pyarrow as pa
 
