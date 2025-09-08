@@ -12,7 +12,10 @@ For a development install with linting and testing tools:
 
 ```bash
 pip install -e .[dev]
+pre-commit install
 ```
+
+Running `pre-commit install` sets up the git hooks for linting, formatting, type checking, and quick tests.
 
 ## Usage
 All subcommands accept `--input`/`-i`, `--input-format`, `--output`/`-o`, and `--output-format` to control I/O. These options support `csv` or `parquet`. When omitted, formats are inferred from file extensions or magic bytes when reading from `STDIN`. Leaving out `--input` makes the command read from `STDIN`; omitting `--output` writes to `STDOUT`.
