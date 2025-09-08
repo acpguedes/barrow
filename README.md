@@ -12,6 +12,8 @@ from files or `STDIN` and writing to files or `STDOUT` in CSV or Parquet format.
 ```
 barrow filter "a > 1" --input data.csv --output result.parquet
 barrow join id id --input left.csv --right other.parquet --output out.csv
+# membership and pattern matching
+barrow filter "country in ['US', 'CA'] and name like 'Jo%'" --input data.csv --output out.csv
 ```
 
 `--input-format` and `--output-format` (and `--right-format` for joins) accept
