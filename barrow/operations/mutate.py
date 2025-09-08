@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import logging
 import pyarrow as pa
 
 from ..expr import Expression
 from ._env import build_env
 from ._expr_eval import evaluate_expression
+
+
+logger = logging.getLogger(__name__)
 
 
 def mutate(table: pa.Table, **expressions: Expression) -> pa.Table:
@@ -17,9 +21,11 @@ def mutate(table: pa.Table, **expressions: Expression) -> pa.Table:
     existing columns and functions from :mod:`numpy` provided by
     :func:`~barrow.operations._env.build_env`.
     """
+    logger.debug("Mutating with expressions: %s", list(expressions.keys()))
     env = build_env(table)
     out = table
     for name, expr in expressions.items():
+        logger.debug("Evaluating expression for column '%s'", name)
         value = evaluate_expression(expr, env)
         arr = pa.array(value)
         if name in out.column_names:
@@ -28,6 +34,9 @@ def mutate(table: pa.Table, **expressions: Expression) -> pa.Table:
         else:
             out = out.append_column(name, arr)
         env[name] = value
+        logger.debug(
+            "Column '%s' added/replaced, total columns now %d", name, out.num_columns
+        )
     return out
 
 
