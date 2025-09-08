@@ -10,9 +10,20 @@ from .filter import filter
 from .mutate import mutate
 from .groupby import groupby
 from .summary import summary
+from .ungroup import ungroup
 from .join import join
 from .window import window
 from .sql import sql
 
-__all__ = ["select", "filter", "mutate", "groupby", "summary", "join", "window", "sql"]
+__all__ = [
+    "select",
+    "filter",
+    "mutate",
+    "groupby",
+    "summary",
+    "ungroup",
+    "join",
+    "window",
+    "sql",
+]
 

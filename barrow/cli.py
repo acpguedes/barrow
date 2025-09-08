@@ -20,6 +20,7 @@ from .operations import (
     mutate as op_mutate,
     select as op_select,
     summary as op_summary,
+    ungroup as op_ungroup,
 )
 
 
@@ -69,21 +70,13 @@ def _cmd_mutate(args: argparse.Namespace) -> int:
 def _cmd_groupby(args: argparse.Namespace) -> int:
     table = read_table(args.input, args.input_format)
     cols = [c.strip() for c in args.columns.split(",") if c.strip()]
-    metadata = dict(table.schema.metadata or {})
-    metadata[b"grouped_by"] = ",".join(cols).encode()
-    table = table.replace_schema_metadata(metadata)
+    table = op_groupby(table, cols)
     write_table(table, args.output, args.output_format)
     return 0
 
 
 def _cmd_summary(args: argparse.Namespace) -> int:
     table = read_table(args.input, args.input_format)
-    metadata = table.schema.metadata or {}
-    grouped_by = metadata.get(b"grouped_by")
-    if not grouped_by:
-        raise BarrowError("summary requires grouping metadata")
-    cols = grouped_by.decode().split(",") if grouped_by else []
-    grouped = op_groupby(table, cols)
     pairs = [p.strip() for p in args.aggregations.split(",") if p.strip()]
     aggregations: dict[str, str] = {}
     for pair in pairs:
@@ -91,17 +84,14 @@ def _cmd_summary(args: argparse.Namespace) -> int:
             raise BarrowError("summary arguments must be COLUMN=AGG")
         col, agg = pair.split("=", 1)
         aggregations[col.strip()] = agg.strip()
-    result = op_summary(grouped, aggregations)
-    result = result.replace_schema_metadata(None)
+    result = op_summary(table, aggregations)
     write_table(result, args.output, args.output_format)
     return 0
 
 
 def _cmd_ungroup(args: argparse.Namespace) -> int:
     table = read_table(args.input, args.input_format)
-    metadata = dict(table.schema.metadata or {})
-    metadata.pop(b"grouped_by", None)
-    table = table.replace_schema_metadata(metadata or None)
+    table = op_ungroup(table)
     write_table(table, args.output, args.output_format)
     return 0
 
