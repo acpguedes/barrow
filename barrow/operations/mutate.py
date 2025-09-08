@@ -2,10 +2,10 @@ from __future__ import annotations
 
 """Column creation and transformation operation."""
 
-import numpy as np
 import pyarrow as pa
 
 from ..expr import Expression
+from ._env import build_env
 from ._expr_eval import evaluate_expression
 
 
@@ -14,12 +14,10 @@ def mutate(table: pa.Table, **expressions: Expression) -> pa.Table:
 
     Each keyword argument represents the name of the resulting column and its
     value is a Python :class:`~barrow.expr.Expression` evaluated using the
-    existing columns and functions from :mod:`numpy`.
+    existing columns and functions from :mod:`numpy` provided by
+    :func:`~barrow.operations._env.build_env`.
     """
-    env: dict[str, object] = {
-        name: table[name].to_numpy(zero_copy_only=False) for name in table.column_names
-    }
-    env.update({name: getattr(np, name) for name in dir(np) if not name.startswith("_")})
+    env = build_env(table)
     out = table
     for name, expr in expressions.items():
         value = evaluate_expression(expr, env)
