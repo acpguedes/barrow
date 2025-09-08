@@ -8,18 +8,20 @@ Each command reads from `STDIN` or a file and writes to `STDOUT` or a file. Form
 ## Advanced Examples
 ### Join and Aggregate
 ```bash
-barrow join id id --right other.csv --input data.csv | \
+barrow join id id --right other.csv --input data.csv --input-format csv --right-format csv | \
 barrow mutate "total=price*qty" | \
 barrow groupby category | \
 barrow summary "revenue=sum(total)" --output-format parquet --output report.parquet
 ```
 This pipeline joins two datasets on `id`, computes a new column, groups by `category`, and writes aggregated revenue to a Parquet file.
 
+Note: Writing grouped data to CSV drops grouping metadata; use Parquet to preserve it.
+
 ### Streaming Filters and Projections
 ```bash
 barrow filter "score > 80" --input-format csv | \
 barrow select "name,score" | \
-barrow sort "score" --descending
+barrow sort "score" --descending --output-format parquet --output top.parquet
 ```
 Use streaming operations to filter, project, and sort large datasets without loading them entirely into memory.
 
