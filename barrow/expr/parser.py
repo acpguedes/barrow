@@ -15,7 +15,7 @@ import re
 import tokenize
 from dataclasses import dataclass
 from io import StringIO
-from typing import Any, Callable, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence, cast
 
 from ..errors import InvalidExpressionError
 
@@ -140,7 +140,7 @@ def parse(expression: str) -> Expression:
 
 def _convert(node: ast.AST) -> Expression:
     if isinstance(node, ast.BinOp):
-        op_map = {
+        op_map_bin: dict[type[ast.operator], str] = {
             ast.Add: "+",
             ast.Sub: "-",
             ast.Mult: "*",
@@ -150,21 +150,25 @@ def _convert(node: ast.AST) -> Expression:
             ast.MatMult: "like",
         }
         return BinaryExpression(
-            _convert(node.left), op_map[type(node.op)], _convert(node.right)
+            _convert(node.left), op_map_bin[type(node.op)], _convert(node.right)
         )
     if isinstance(node, ast.UnaryOp):
-        op_map = {ast.Not: "not", ast.USub: "-", ast.UAdd: "+"}
-        return UnaryExpression(op_map[type(node.op)], _convert(node.operand))
+        op_map_unary: dict[type[ast.unaryop], str] = {
+            ast.Not: "not",
+            ast.USub: "-",
+            ast.UAdd: "+",
+        }
+        return UnaryExpression(op_map_unary[type(node.op)], _convert(node.operand))
     if isinstance(node, ast.BoolOp):
-        op_map = {ast.And: "and", ast.Or: "or"}
+        op_map_bool: dict[type[ast.boolop], str] = {ast.And: "and", ast.Or: "or"}
         expr = _convert(node.values[0])
         for value in node.values[1:]:
-            expr = BinaryExpression(expr, op_map[type(node.op)], _convert(value))
+            expr = BinaryExpression(expr, op_map_bool[type(node.op)], _convert(value))
         return expr
     if isinstance(node, ast.Compare):
         if len(node.ops) != 1 or len(node.comparators) != 1:
             raise InvalidExpressionError("Chained comparisons are not supported")
-        op_map = {
+        op_map_cmp: dict[type[ast.cmpop], str] = {
             ast.Eq: "==",
             ast.NotEq: "!=",
             ast.Lt: "<",
@@ -176,7 +180,7 @@ def _convert(node: ast.AST) -> Expression:
         }
         return BinaryExpression(
             _convert(node.left),
-            op_map[type(node.ops[0])],
+            op_map_cmp[type(node.ops[0])],
             _convert(node.comparators[0]),
         )
     if isinstance(node, ast.Call):
@@ -191,7 +195,8 @@ def _convert(node: ast.AST) -> Expression:
         elements = [_convert(e) for e in node.elts]
         if not all(isinstance(e, Literal) for e in elements):
             raise InvalidExpressionError("Only literal sequences are supported")
-        values = [e.value for e in elements]
+        lit_elements = cast(list[Literal], elements)
+        values = [e.value for e in lit_elements]
         if isinstance(node, ast.List):
             return Literal(values)
         if isinstance(node, ast.Tuple):
