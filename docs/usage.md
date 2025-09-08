@@ -25,6 +25,22 @@ barrow sort "score" --descending --output-format parquet --output top.parquet
 ```
 Use streaming operations to filter, project, and sort large datasets without loading them entirely into memory.
 
+### Filter → mutate → select → groupby → summary
+```bash
+# filter, mutate, select, groupby, and summarize
+barrow filter "a > 1" --input data.csv --input-format csv | \
+barrow mutate "c=a+b" | \
+barrow select "c,grp" | \
+barrow groupby grp | \
+barrow summary "c=sum"
+```
+
+```csv
+grp,c_sum
+x,7
+y,9
+```
+
 ### Inspecting Results
 When working with binary formats like Parquet, append `view` to a pipeline to
 inspect the data in a human-readable form:
