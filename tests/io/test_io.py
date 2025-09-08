@@ -5,7 +5,6 @@ import io
 import sys
 
 import pyarrow as pa
-import pyarrow.csv as csv
 import pyarrow.parquet as pq
 import pytest
 
@@ -76,4 +75,3 @@ def test_write_table_unsupported_format() -> None:
     table = pa.table({"a": [1]})
     with pytest.raises(UnsupportedFormatError):
         write_table(table, "dummy", "json")
-
