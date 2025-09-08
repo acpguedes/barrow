@@ -181,27 +181,64 @@ def _cmd_view(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     """Create and return the top-level argument parser."""
 
-    parser = argparse.ArgumentParser(description="barrow: simple data tool")
+    parser = argparse.ArgumentParser(
+        description="barrow: simple data tool",
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    p = subparsers.add_parser("filter", help="Filter rows")
+    p = subparsers.add_parser(
+        "filter",
+        help="Filter rows using a boolean expression",
+        description=(
+            "Filter rows by evaluating an expression for each row.\n"
+            "Only rows where the expression is true are written to the output."
+        ),
+        epilog="Example:\n  barrow filter 'age > 30' -i people.csv",
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
     _add_io_options(p)
     p.add_argument("expression", help="Expression to evaluate")
     p.set_defaults(func=_cmd_filter)
 
-    p = subparsers.add_parser("select", help="Select columns")
+    p = subparsers.add_parser(
+        "select",
+        help="Keep a subset of columns",
+        description=(
+            "Select a comma-separated list of columns and drop all others.\n"
+            "Column names are case-sensitive."
+        ),
+        epilog="Example:\n  barrow select 'name,age' -i people.csv",
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
     _add_io_options(p)
     p.add_argument("columns", help="Comma-separated column names")
     p.set_defaults(func=_cmd_select)
 
-    p = subparsers.add_parser("mutate", help="Add or modify columns")
+    p = subparsers.add_parser(
+        "mutate",
+        help="Add or modify columns via expressions",
+        description=(
+            "Create new columns or overwrite existing ones with NAME=EXPR"
+            " assignments.\nExpressions may reference existing columns and use"
+            " Python operators."
+        ),
+        epilog="Example:\n  barrow mutate 'double=value*2,total=a+b' -i data.csv",
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
     _add_io_options(p)
     p.add_argument("assignments", help="Comma-separated NAME=EXPR pairs")
     p.set_defaults(func=_cmd_mutate)
 
     p = subparsers.add_parser(
         "groupby",
-        help="Group rows by columns (CSV adds '# grouped_by' comment)",
+        help="Group rows by column values",
+        description=(
+            "Group rows using one or more columns. The grouping information is\n"
+            "stored in the output so that 'summary' can aggregate over the groups later."
+        ),
+        epilog="Example:\n  barrow groupby 'city,year' -i sales.csv",
+        formatter_class=argparse.RawTextHelpFormatter,
     )
     _add_io_options(p)
     p.add_argument("columns", help="Comma-separated column names")
@@ -209,7 +246,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = subparsers.add_parser(
         "summary",
-        help="Aggregate grouped table (keeps '# grouped_by' comment in CSV)",
+        help="Aggregate a grouped table",
+        description=(
+            "Compute aggregations for each group produced by 'groupby'.\n"
+            "Each aggregation uses COLUMN=AGG where AGG is a function such as sum or mean."
+        ),
+        epilog="Example:\n  barrow summary 'total=sum(amount)' -i grouped.csv",
+        formatter_class=argparse.RawTextHelpFormatter,
     )
     _add_io_options(p)
     p.add_argument("aggregations", help="Comma-separated COLUMN=AGG pairs")
@@ -217,12 +260,28 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = subparsers.add_parser(
         "ungroup",
-        help="Remove grouping metadata (drops '# grouped_by' CSV comment)",
+        help="Remove grouping metadata",
+        description=(
+            "Drop grouping information created by 'groupby' so the table behaves\n"
+            "like an ungrouped table."
+        ),
+        epilog="Example:\n  barrow ungroup -i grouped.csv",
+        formatter_class=argparse.RawTextHelpFormatter,
     )
     _add_io_options(p)
     p.set_defaults(func=_cmd_ungroup)
 
-    p = subparsers.add_parser("join", help="Join two tables")
+    p = subparsers.add_parser(
+        "join",
+        help="Join two tables on column keys",
+        description=(
+            "Combine a left table with another table supplied via --right.\n"
+            "Specify key columns with LEFT_ON and RIGHT_ON and optionally choose\n"
+            "a join type such as inner or outer."
+        ),
+        epilog="Example:\n  barrow join id id --right other.csv -i left.csv",
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
     _add_io_options(p)
     p.add_argument("left_on", help="Join key in the left table")
     p.add_argument("right_on", help="Join key in the right table")
@@ -237,7 +296,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=_cmd_join)
 
-    p = subparsers.add_parser("view", help="Display table in human-readable text")
+    p = subparsers.add_parser(
+        "view",
+        help="Pretty-print a table to STDOUT",
+        description=(
+            "Display a table in CSV format for quick inspection. The output is\n"
+            "always written to STDOUT and --output-format is ignored."
+        ),
+        epilog="Example:\n  barrow view -i data.parquet",
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
     p.add_argument("--input", "-i", help="Input file. Reads STDIN if omitted.")
     p.add_argument("--input-format", choices=["csv", "parquet"], help="Input format")
     p.add_argument(
