@@ -12,6 +12,7 @@ from .groupby import groupby
 from .summary import summary
 from .join import join
 from .window import window
+from .sql import sql
 
-__all__ = ["select", "filter", "mutate", "groupby", "summary", "join", "window"]
+__all__ = ["select", "filter", "mutate", "groupby", "summary", "join", "window", "sql"]
 

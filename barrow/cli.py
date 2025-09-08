@@ -18,6 +18,7 @@ from .operations import (
     summary as op_summary,
     join as op_join,
     window as op_window,
+    sql as op_sql,
 )
 
 
@@ -105,6 +106,12 @@ def main(argv: list[str] | None = None) -> int:
                     idx += 1
                 right_table = read_table(path, args.input_format)
                 table = op_join(table, right_table, left_on, right_on, join_type)
+            elif op == "sql":
+                if idx >= len(rest):
+                    raise BarrowError("sql requires a query")
+                query = rest[idx]
+                idx += 1
+                table = op_sql(table, query)
             elif op == "groupby":
                 if idx >= len(rest):
                     raise BarrowError("groupby requires column names")
