@@ -128,3 +128,33 @@ def test_format_combinations(
     assert rc == 0
     table = reader(dst)
     assert table.to_pydict() == sample_table.to_pydict()
+
+
+def test_window(sample_csv, tmp_path) -> None:
+    dst = tmp_path / "out.parquet"
+
+    rc = main([
+        "--input",
+        sample_csv,
+        "--output",
+        str(dst),
+        "window",
+        "by=grp",
+        "order_by=a",
+        "rn=row_number()",
+    ])
+    assert rc == 0
+    table = pq.read_table(dst)
+    assert table["rn"].to_pylist() == [1, 2, 1]
+
+
+def test_window_missing_expression(sample_csv, tmp_path) -> None:
+    dst = tmp_path / "out.parquet"
+    rc = main([
+        "--input",
+        sample_csv,
+        "--output",
+        str(dst),
+        "window",
+    ])
+    assert rc == 1
