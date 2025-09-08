@@ -37,9 +37,7 @@ def write_table(table: pa.Table, path: str | None, format: str | None) -> None:
 
     if fmt == "csv":
         grouped = (
-            table.schema.metadata.get(b"grouped_by")
-            if table.schema.metadata
-            else None
+            table.schema.metadata.get(b"grouped_by") if table.schema.metadata else None
         )
         comment = b"# grouped_by: " + grouped + b"\n" if grouped else None
         if path:

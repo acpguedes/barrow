@@ -27,3 +27,4 @@ barrow/operations/summary.py
 barrow/operations/ungroup.py
 barrow/operations/window.py
 tests/test_cli.py
+tests/test_cli_io_defaults.py

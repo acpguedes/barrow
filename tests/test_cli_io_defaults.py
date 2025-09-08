@@ -6,14 +6,16 @@ from barrow.cli import main
 
 def test_filter_inherits_input_format(sample_parquet, tmp_path) -> None:
     out = tmp_path / "out"
-    rc = main([
-        "filter",
-        "a > 1",
-        "--input",
-        sample_parquet,
-        "--output",
-        str(out),
-    ])
+    rc = main(
+        [
+            "filter",
+            "a > 1",
+            "--input",
+            sample_parquet,
+            "--output",
+            str(out),
+        ]
+    )
     assert rc == 0
     table = pq.read_table(out)
     assert table.to_pydict()["a"] == [2, 3]
