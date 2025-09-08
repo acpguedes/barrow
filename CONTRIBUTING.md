@@ -1,16 +1,16 @@
 # Contributing
 
-## Setup
+## Environment Setup
 
-Use the provided Makefile to install development dependencies and pre-commit hooks:
+Install the development dependencies and configure pre-commit hooks using the Makefile:
 
 ```bash
 make install
 ```
 
-## Development workflow
+## Development Workflow
 
-Run linters and formatters:
+Run the linters and formatters:
 
 ```bash
 make lint
@@ -23,7 +23,7 @@ Run the test suite:
 make test
 ```
 
-Clean up generated files:
+Remove generated files:
 
 ```bash
 make clean
