@@ -30,5 +30,9 @@ def evaluate_expression(expression: Expression, env: Mapping[str, Any]) -> Any:
     """
     try:
         return expression.evaluate(env)
-    except KeyError as exc:  # pragma: no cover - exercised in tests
-        raise NameError(str(exc)) from None
+    except (KeyError, NameError) as exc:  # pragma: no cover - exercised in tests
+        # ``KeyError`` occurs for missing variables while a ``NameError``
+        # can be raised for missing functions.  Include the missing name
+        # in the error message for clarity.
+        missing = exc.args[0]
+        raise NameError(f"name '{missing}' is not defined") from None
