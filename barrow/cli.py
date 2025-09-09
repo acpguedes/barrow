@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 import sys
 
@@ -277,7 +278,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="barrow: simple data tool",
         formatter_class=argparse.RawTextHelpFormatter,
     )
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    subparsers = parser.add_subparsers(dest="command")
 
     p = subparsers.add_parser(
         "filter",
@@ -429,6 +430,9 @@ def main(argv: list[str] | None = None) -> int:
     if argcomplete:  # pragma: no cover - optional dependency
         argcomplete.autocomplete(parser)
     args = parser.parse_args(argv)
+    if args.command is None and os.environ.get("_ARGCOMPLETE") != "1":
+        parser.print_usage(file=sys.stderr)
+        return 1
     if hasattr(args, "_set_io_defaults"):
         args._set_io_defaults(args)
     try:
