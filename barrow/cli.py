@@ -45,6 +45,10 @@ def _add_io_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--output-format", choices=["csv", "parquet"], help="Output format"
     )
+    parser.add_argument(
+        "--delimiter",
+        help="Field delimiter for CSV input and output",
+    )
 
     def _set_io_defaults(args: argparse.Namespace) -> None:
         if args.output_format is None:
@@ -67,10 +71,10 @@ def _cmd_filter(args: argparse.Namespace) -> int:
     not specified.
     """
 
-    table = read_table(args.input, args.input_format)
+    table = read_table(args.input, args.input_format, args.delimiter)
     expr = parse(args.expression)
     table = op_filter(table, expr)
-    write_table(table, args.output, args.output_format)
+    write_table(table, args.output, args.output_format, args.delimiter)
     return 0
 
 
@@ -81,10 +85,10 @@ def _cmd_select(args: argparse.Namespace) -> int:
     provided.
     """
 
-    table = read_table(args.input, args.input_format)
+    table = read_table(args.input, args.input_format, args.delimiter)
     cols = [c.strip() for c in args.columns.split(",") if c.strip()]
     table = op_select(table, cols)
-    write_table(table, args.output, args.output_format)
+    write_table(table, args.output, args.output_format, args.delimiter)
     return 0
 
 
@@ -95,7 +99,7 @@ def _cmd_mutate(args: argparse.Namespace) -> int:
     output.
     """
 
-    table = read_table(args.input, args.input_format)
+    table = read_table(args.input, args.input_format, args.delimiter)
     pairs = [p.strip() for p in args.assignments.split(",") if p.strip()]
     expressions: dict[str, Expression] = {}
     for pair in pairs:
@@ -104,7 +108,7 @@ def _cmd_mutate(args: argparse.Namespace) -> int:
         name, expr_str = pair.split("=", 1)
         expressions[name.strip()] = parse(expr_str.strip())
     table = op_mutate(table, **expressions)
-    write_table(table, args.output, args.output_format)
+    write_table(table, args.output, args.output_format, args.delimiter)
     return 0
 
 
@@ -114,10 +118,10 @@ def _cmd_groupby(args: argparse.Namespace) -> int:
     When ``--output-format`` is omitted, the output matches the input format.
     """
 
-    table = read_table(args.input, args.input_format)
+    table = read_table(args.input, args.input_format, args.delimiter)
     cols = [c.strip() for c in args.columns.split(",") if c.strip()]
     table = op_groupby(table, cols)
-    write_table(table, args.output, args.output_format)
+    write_table(table, args.output, args.output_format, args.delimiter)
     return 0
 
 
@@ -127,7 +131,7 @@ def _cmd_summary(args: argparse.Namespace) -> int:
     The output uses the input format unless ``--output-format`` is given.
     """
 
-    table = read_table(args.input, args.input_format)
+    table = read_table(args.input, args.input_format, args.delimiter)
     pairs = [p.strip() for p in args.aggregations.split(",") if p.strip()]
     aggregations: dict[str, str] = {}
     for pair in pairs:
@@ -136,7 +140,7 @@ def _cmd_summary(args: argparse.Namespace) -> int:
         col, agg = pair.split("=", 1)
         aggregations[col.strip()] = agg.strip()
     result = op_summary(table, aggregations)
-    write_table(result, args.output, args.output_format)
+    write_table(result, args.output, args.output_format, args.delimiter)
     return 0
 
 
@@ -146,9 +150,9 @@ def _cmd_ungroup(args: argparse.Namespace) -> int:
     Output format defaults to the input format when not specified.
     """
 
-    table = read_table(args.input, args.input_format)
+    table = read_table(args.input, args.input_format, args.delimiter)
     table = op_ungroup(table)
-    write_table(table, args.output, args.output_format)
+    write_table(table, args.output, args.output_format, args.delimiter)
     return 0
 
 
@@ -159,10 +163,10 @@ def _cmd_join(args: argparse.Namespace) -> int:
     input.
     """
 
-    left = read_table(args.input, args.input_format)
-    right = read_table(args.right, args.right_format)
+    left = read_table(args.input, args.input_format, args.delimiter)
+    right = read_table(args.right, args.right_format, args.delimiter)
     result = op_join(left, right, args.left_on, args.right_on, args.join_type)
-    write_table(result, args.output, args.output_format)
+    write_table(result, args.output, args.output_format, args.delimiter)
     return 0
 
 
@@ -173,8 +177,8 @@ def _cmd_view(args: argparse.Namespace) -> int:
     table is always written to ``STDOUT`` in CSV format.
     """
 
-    table = read_table(args.input, args.input_format)
-    write_table(table, None, "csv")
+    table = read_table(args.input, args.input_format, args.delimiter)
+    write_table(table, None, "csv", args.delimiter)
     return 0
 
 
@@ -313,6 +317,7 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["csv", "parquet"],
         help="Output format (ignored)",
     )
+    p.add_argument("--delimiter", help="Field delimiter for CSV input and output")
     p.set_defaults(func=_cmd_view)
 
     return parser

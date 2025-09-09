@@ -11,7 +11,7 @@ from barrow.errors import InvalidExpressionError
 
 
 def test_cli_returns_error_on_exception(monkeypatch, capsys) -> None:
-    def fake_read_table(path, fmt):
+    def fake_read_table(path, fmt, delimiter=None):
         raise InvalidExpressionError("bad format")
 
     monkeypatch.setattr("barrow.cli.read_table", fake_read_table)

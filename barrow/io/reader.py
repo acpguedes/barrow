@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 
+import csv as stdcsv
 import pyarrow as pa
 import pyarrow.csv as csv
 import pyarrow.parquet as pq
@@ -28,7 +29,11 @@ def _detect_format(path: str | None, data: bytes | None) -> str:
     return "csv"
 
 
-def read_table(path: str | None, format: str | None) -> pa.Table:
+def read_table(
+    path: str | None,
+    format: str | None,
+    input_delimiter: str | None = None,
+) -> pa.Table:
     """Read a table from ``path`` or ``STDIN``.
 
     Parameters
@@ -38,6 +43,9 @@ def read_table(path: str | None, format: str | None) -> pa.Table:
     format:
         The file format. Supported values are ``"csv"`` and ``"parquet"``.
         If ``None``, the format is inferred from ``path`` or the input data.
+    input_delimiter:
+        Field delimiter for CSV inputs. When ``None`` the delimiter is guessed
+        from the data using :class:`csv.Sniffer`.
     """
 
     data: bytes | None = None
@@ -52,14 +60,28 @@ def read_table(path: str | None, format: str | None) -> pa.Table:
     if fmt == "csv":
         metadata: dict[bytes, bytes] = {b"format": fmt.encode()}
         prefix = b"# grouped_by:"
+        delimiter = input_delimiter
         if path:
+            with open(path, "rb") as f:
+                first = f.readline()
+                sample = f.read(1024)
+            if first.startswith(prefix):
+                sample_bytes = sample
+            else:
+                sample_bytes = first + sample
+            if delimiter is None:
+                try:
+                    delimiter = stdcsv.Sniffer().sniff(sample_bytes.decode()).delimiter
+                except Exception:
+                    delimiter = ","
+            parse_options = csv.ParseOptions(delimiter=delimiter)
             with open(path, "rb") as f:
                 first = f.readline()
                 if first.startswith(prefix):
                     metadata[b"grouped_by"] = first[len(prefix) :].strip()
                 else:
                     f.seek(0)
-                table = csv.read_csv(f)
+                table = csv.read_csv(f, parse_options=parse_options)
         else:
             if data is None:
                 data = sys.stdin.buffer.read()
@@ -68,7 +90,14 @@ def read_table(path: str | None, format: str | None) -> pa.Table:
                 grouped = data[len(prefix) : newline].strip() if newline != -1 else b""
                 metadata[b"grouped_by"] = grouped
                 data = data[newline + 1 :] if newline != -1 else b""
-            table = csv.read_csv(pa.BufferReader(data))
+            if delimiter is None:
+                sample = data[:1024]
+                try:
+                    delimiter = stdcsv.Sniffer().sniff(sample.decode()).delimiter
+                except Exception:
+                    delimiter = ","
+            parse_options = csv.ParseOptions(delimiter=delimiter)
+            table = csv.read_csv(pa.BufferReader(data), parse_options=parse_options)
         if metadata:
             table = table.replace_schema_metadata(
                 dict(table.schema.metadata or {}) | metadata

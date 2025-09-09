@@ -10,7 +10,12 @@ import pyarrow.parquet as pq
 from ..errors import UnsupportedFormatError
 
 
-def write_table(table: pa.Table, path: str | None, format: str | None) -> None:
+def write_table(
+    table: pa.Table,
+    path: str | None,
+    format: str | None,
+    output_delimiter: str | None = None,
+) -> None:
     """Write ``table`` to ``path`` or ``STDOUT``.
 
     Parameters
@@ -23,6 +28,8 @@ def write_table(table: pa.Table, path: str | None, format: str | None) -> None:
         The file format. Supported values are ``"csv"`` and ``"parquet"``.
         If ``None``, the format is inferred from ``path`` when available and
         otherwise defaults to CSV.
+    output_delimiter:
+        Field delimiter for CSV outputs. When ``None`` a comma is used.
     """
 
     fmt = format.lower() if format else None
@@ -44,17 +51,19 @@ def write_table(table: pa.Table, path: str | None, format: str | None) -> None:
             table.schema.metadata.get(b"grouped_by") if table.schema.metadata else None
         )
         comment = b"# grouped_by: " + grouped + b"\n" if grouped else None
+        delimiter = output_delimiter or ","
+        write_options = csv.WriteOptions(delimiter=delimiter)
         if path:
             if comment:
                 with open(path, "wb") as f:
                     f.write(comment)
-                    csv.write_csv(table, f)
+                    csv.write_csv(table, f, write_options=write_options)
             else:
-                csv.write_csv(table, path)
+                csv.write_csv(table, path, write_options=write_options)
         else:
             if comment:
                 sys.stdout.buffer.write(comment)
-            csv.write_csv(table, sys.stdout.buffer)
+            csv.write_csv(table, sys.stdout.buffer, write_options=write_options)
         return
     if fmt == "parquet":
         if path:
