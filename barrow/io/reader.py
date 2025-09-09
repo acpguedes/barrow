@@ -7,6 +7,7 @@ import csv as stdcsv
 import pyarrow as pa
 import pyarrow.csv as csv
 import pyarrow.parquet as pq
+import pyarrow.feather as feather
 
 from ..errors import UnsupportedFormatError
 
@@ -20,12 +21,16 @@ def _detect_format(path: str | None, data: bytes | None) -> str:
             return "csv"
         if ext == ".parquet":
             return "parquet"
+        if ext == ".feather":
+            return "feather"
         with open(path, "rb") as f:
-            head = f.read(4)
+            head = f.read(6)
     else:
-        head = (data or b"")[:4]
+        head = (data or b"")[:6]
     if head.startswith(b"PAR1"):
         return "parquet"
+    if head.startswith(b"ARROW1"):
+        return "feather"
     return "csv"
 
 
@@ -41,8 +46,9 @@ def read_table(
     path:
         Path to the input file. When ``None`` the data is read from ``STDIN``.
     format:
-        The file format. Supported values are ``"csv"`` and ``"parquet"``.
-        If ``None``, the format is inferred from ``path`` or the input data.
+        The file format. Supported values are ``"csv"``, ``"parquet"`` and
+        ``"feather"``. If ``None``, the format is inferred from ``path`` or the
+        input data.
     input_delimiter:
         Field delimiter for CSV inputs. When ``None`` the delimiter is guessed
         from the data using :class:`csv.Sniffer`.
@@ -102,6 +108,17 @@ def read_table(
             table = table.replace_schema_metadata(
                 dict(table.schema.metadata or {}) | metadata
             )
+        return table
+    if fmt == "feather":
+        if path:
+            table = feather.read_table(path)
+        else:
+            if data is None:
+                data = sys.stdin.buffer.read()
+            table = feather.read_table(pa.BufferReader(data))
+        table = table.replace_schema_metadata(
+            dict(table.schema.metadata or {}) | {b"format": fmt.encode()}
+        )
         return table
     if fmt == "parquet":
         if path:
