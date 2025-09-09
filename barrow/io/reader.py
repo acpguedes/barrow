@@ -50,7 +50,7 @@ def read_table(path: str | None, format: str | None) -> pa.Table:
             fmt = _detect_format(None, data)
 
     if fmt == "csv":
-        metadata: dict[bytes, bytes] = {}
+        metadata: dict[bytes, bytes] = {b"format": fmt.encode()}
         prefix = b"# grouped_by:"
         if path:
             with open(path, "rb") as f:
@@ -76,10 +76,15 @@ def read_table(path: str | None, format: str | None) -> pa.Table:
         return table
     if fmt == "parquet":
         if path:
-            return pq.read_table(path)
-        if data is None:
-            data = sys.stdin.buffer.read()
-        return pq.read_table(pa.BufferReader(data))
+            table = pq.read_table(path)
+        else:
+            if data is None:
+                data = sys.stdin.buffer.read()
+            table = pq.read_table(pa.BufferReader(data))
+        table = table.replace_schema_metadata(
+            dict(table.schema.metadata or {}) | {b"format": fmt.encode()}
+        )
+        return table
     raise UnsupportedFormatError(f"Unsupported format: {format}")
 
 
