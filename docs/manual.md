@@ -5,9 +5,13 @@
 ## Common I/O options
 
 - `-i`, `--input PATH` – input file. Reads `STDIN` if omitted.
-- `--input-format {csv,parquet}` – format of the input file.
+- `--input-format {csv,parquet,feather,orc}` – format of the input file.
 - `-o`, `--output PATH` – output file. Writes to `STDOUT` if omitted.
-- `--output-format {csv,parquet}` – format of the output. Defaults to the input format and is ignored by `view`.
+- `--output-format {csv,parquet,feather,orc}` – format of the output. Defaults to the input format and is ignored by `view`.
+- `--csv`, `--parquet`, `--feather`, `--orc` – shortcut flags to set the output format.
+- `--delimiter CHAR` – field delimiter for CSV input; also used for output unless `--csv-out-delimiter` is given.
+- `--csv-out-delimiter CHAR` – field delimiter for CSV output.
+- `--tmp` – write intermediate results to Feather when using pipes for faster processing.
 
 ## filter
 Filter rows using a boolean expression.
@@ -63,7 +67,7 @@ barrow join id id --right other.csv -i left.csv -o joined.csv
 Additional options:
 
 - `--right PATH` – right input file.
-- `--right-format {csv,parquet}` – format of the right file.
+- `--right-format {csv,parquet,feather,orc}` – format of the right file.
 - `--join-type {inner,left,right,outer}` – type of join (default `inner`).
 
 ## view
