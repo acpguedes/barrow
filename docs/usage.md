@@ -6,14 +6,14 @@
 Each command reads from `STDIN` or a file and writes to `STDOUT` or a file. Formats are inferred from file extensions or may be specified explicitly with `--input-format` and `--output-format`.
 
 ## Advanced Examples
-### Join and Aggregate
+### Join and Aggregate with ORC Output
 ```bash
-barrow join id id --right other.csv --input data.csv --input-format csv --right-format csv | \
-barrow mutate "total=price*qty" | \
-barrow groupby category | \
-barrow summary "revenue=sum(total)" --output-format parquet --output report.parquet
+barrow join id id --right other.csv --input data.csv --input-format csv --right-format csv --delimiter ';' | \
+barrow mutate "total=price*qty" --tmp | \
+barrow groupby category --tmp | \
+barrow summary "revenue=sum(total)" --orc --output report.orc
 ```
-This pipeline joins two datasets on `id`, computes a new column, groups by `category`, and writes aggregated revenue to a Parquet file.
+This pipeline joins two semicolon-delimited CSV datasets on `id`, uses `--tmp` to store intermediate results in Feather, groups by `category`, and writes aggregated revenue to an ORC file.
 When writing grouped data to CSV, grouping information is stored in a leading
 comment line of the form `# grouped_by: col1,col2` and is restored on read.
 
