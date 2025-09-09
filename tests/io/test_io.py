@@ -6,6 +6,7 @@ import sys
 
 import pyarrow as pa
 import pyarrow.parquet as pq
+import pyarrow.orc as orc
 import pytest
 
 from barrow.errors import UnsupportedFormatError
@@ -25,6 +26,12 @@ def test_read_table_infers_format_from_extension(tmp_path: Path) -> None:
     table = read_table(str(pq_path), None)
     assert table.to_pydict() == {"a": [1]}
     assert table.schema.metadata[b"format"] == b"parquet"
+
+    orc_path = tmp_path / "input.orc"
+    orc.write_table(pa.table({"a": [1]}), orc_path)
+    table = read_table(str(orc_path), None)
+    assert table.to_pydict() == {"a": [1]}
+    assert table.schema.metadata[b"format"] == b"orc"
 
 
 def test_read_table_from_stdin_csv(monkeypatch) -> None:
@@ -54,6 +61,20 @@ def test_read_table_from_stdin_parquet(monkeypatch) -> None:
     assert table.schema.metadata[b"format"] == b"parquet"
 
 
+def test_read_table_from_stdin_orc(monkeypatch) -> None:
+    buf = io.BytesIO()
+    orc.write_table(pa.table({"a": [1]}), buf)
+
+    class Dummy:
+        def __init__(self, d: bytes) -> None:
+            self.buffer = io.BytesIO(d)
+
+    monkeypatch.setattr(sys, "stdin", Dummy(buf.getvalue()))
+    table = read_table(None, None)
+    assert table.to_pydict() == {"a": [1]}
+    assert table.schema.metadata[b"format"] == b"orc"
+
+
 def test_write_table_to_stdout_defaults_csv(capsys) -> None:
     table = pa.table({"a": [1]})
     write_table(table, None, None)
@@ -69,6 +90,12 @@ def test_write_table_infers_from_extension(tmp_path: Path) -> None:
     write_table(table, str(pq_path), None)
     assert pq.read_table(pq_path).to_pydict() == {"a": [1]}
 
+    table = pa.table({"a": [1]})
+    orc_path = tmp_path / "output.orc"
+
+    write_table(table, str(orc_path), None)
+    assert orc.read_table(orc_path).to_pydict() == {"a": [1]}
+
 
 def test_write_table_uses_format_metadata(tmp_path: Path) -> None:
     pq_path = tmp_path / "input.parquet"
@@ -77,6 +104,13 @@ def test_write_table_uses_format_metadata(tmp_path: Path) -> None:
     out = tmp_path / "output"
     write_table(table, str(out), None)
     assert pq.read_table(out).to_pydict() == {"a": [1]}
+
+    orc_path = tmp_path / "input.orc"
+    orc.write_table(pa.table({"a": [1]}), orc_path)
+    table = read_table(str(orc_path), None)
+    out = tmp_path / "output_orc"
+    write_table(table, str(out), None)
+    assert orc.read_table(out).to_pydict() == {"a": [1]}
 
 
 def test_write_table_to_stdout_uses_format_metadata(monkeypatch, tmp_path: Path) -> None:
@@ -93,6 +127,16 @@ def test_write_table_to_stdout_uses_format_metadata(monkeypatch, tmp_path: Path)
     monkeypatch.setattr(sys, "stdout", Dummy(buf))
     write_table(table, None, None)
     assert buf.getvalue().startswith(b"PAR1")
+
+    orc_path = tmp_path / "input.orc"
+    orc.write_table(pa.table({"a": [1]}), orc_path)
+    table = read_table(str(orc_path), None)
+
+    buf = io.BytesIO()
+
+    monkeypatch.setattr(sys, "stdout", Dummy(buf))
+    write_table(table, None, None)
+    assert buf.getvalue().startswith(b"ORC")
 
 
 def test_read_table_unsupported_format() -> None:

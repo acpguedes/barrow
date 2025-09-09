@@ -35,7 +35,7 @@ def _add_io_options(parser: argparse.ArgumentParser) -> None:
 
     parser.add_argument("--input", "-i", help="Input file. Reads STDIN if omitted.")
     parser.add_argument(
-        "--input-format", choices=["csv", "parquet", "feather"], help="Input format"
+        "--input-format", choices=["csv", "parquet", "feather", "orc"], help="Input format"
     )
     parser.add_argument(
         "--output",
@@ -45,7 +45,7 @@ def _add_io_options(parser: argparse.ArgumentParser) -> None:
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "--output-format",
-        choices=["csv", "parquet", "feather"],
+        choices=["csv", "parquet", "feather", "orc"],
         help="Output format",
     )
     group.add_argument(
@@ -68,6 +68,13 @@ def _add_io_options(parser: argparse.ArgumentParser) -> None:
         action="store_const",
         const="feather",
         help="Write output in Feather format",
+    )
+    group.add_argument(
+        "--orc",
+        dest="output_format",
+        action="store_const",
+        const="orc",
+        help="Write output in ORC format",
     )
     parser.add_argument(
         "--delimiter",
@@ -102,6 +109,8 @@ def _add_io_options(parser: argparse.ArgumentParser) -> None:
                     args.output_format = "parquet"
                 elif ext == ".feather":
                     args.output_format = "feather"
+                elif ext == ".orc":
+                    args.output_format = "orc"
 
     parser.set_defaults(_set_io_defaults=_set_io_defaults)
 
@@ -368,7 +377,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("right_on", help="Join key in the right table")
     p.add_argument("--right", required=True, help="Right input file")
     p.add_argument(
-        "--right-format", choices=["csv", "parquet"], help="Right file format"
+        "--right-format", choices=["csv", "parquet", "orc"], help="Right file format"
     )
     p.add_argument(
         "--join-type",
@@ -388,10 +397,10 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawTextHelpFormatter,
     )
     p.add_argument("--input", "-i", help="Input file. Reads STDIN if omitted.")
-    p.add_argument("--input-format", choices=["csv", "parquet"], help="Input format")
+    p.add_argument("--input-format", choices=["csv", "parquet", "orc"], help="Input format")
     p.add_argument(
         "--output-format",
-        choices=["csv", "parquet"],
+        choices=["csv", "parquet", "orc"],
         help="Output format (ignored)",
     )
     p.add_argument(

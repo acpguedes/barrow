@@ -4,6 +4,7 @@ import sys
 import pyarrow as pa
 import pyarrow.csv as csv
 import pyarrow.parquet as pq
+import pyarrow.orc as orc
 import pytest
 
 from barrow.cli import main
@@ -128,6 +129,7 @@ def test_groupby_summary_pipeline(sample_csv, tmp_path) -> None:
     [
         pytest.param("sample_csv", csv.read_csv, ".csv", id="csv"),
         pytest.param("sample_parquet", pq.read_table, ".parquet", id="parquet"),
+        pytest.param("sample_orc", orc.read_table, ".orc", id="orc"),
     ],
 )
 def test_select_handles_various_formats(

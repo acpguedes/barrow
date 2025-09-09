@@ -8,6 +8,7 @@ import pyarrow as pa
 import pyarrow.csv as csv
 import pyarrow.parquet as pq
 import pyarrow.feather as feather
+import pyarrow.orc as orc
 
 from ..errors import UnsupportedFormatError
 
@@ -23,6 +24,8 @@ def _detect_format(path: str | None, data: bytes | None) -> str:
             return "parquet"
         if ext == ".feather":
             return "feather"
+        if ext == ".orc":
+            return "orc"
         with open(path, "rb") as f:
             head = f.read(6)
     else:
@@ -31,6 +34,8 @@ def _detect_format(path: str | None, data: bytes | None) -> str:
         return "parquet"
     if head.startswith(b"ARROW1"):
         return "feather"
+    if head.startswith(b"ORC"):
+        return "orc"
     return "csv"
 
 
@@ -46,9 +51,9 @@ def read_table(
     path:
         Path to the input file. When ``None`` the data is read from ``STDIN``.
     format:
-        The file format. Supported values are ``"csv"``, ``"parquet"`` and
-        ``"feather"``. If ``None``, the format is inferred from ``path`` or the
-        input data.
+        The file format. Supported values are ``"csv"``, ``"parquet"``,
+        ``"feather"`` and ``"orc"``. If ``None``, the format is inferred from
+        ``path`` or the input data.
     input_delimiter:
         Field delimiter for CSV inputs. When ``None`` the delimiter is guessed
         from the data using :class:`csv.Sniffer`.
@@ -127,6 +132,17 @@ def read_table(
             if data is None:
                 data = sys.stdin.buffer.read()
             table = pq.read_table(pa.BufferReader(data))
+        table = table.replace_schema_metadata(
+            dict(table.schema.metadata or {}) | {b"format": fmt.encode()}
+        )
+        return table
+    if fmt == "orc":
+        if path:
+            table = orc.read_table(path)
+        else:
+            if data is None:
+                data = sys.stdin.buffer.read()
+            table = orc.read_table(pa.BufferReader(data))
         table = table.replace_schema_metadata(
             dict(table.schema.metadata or {}) | {b"format": fmt.encode()}
         )
