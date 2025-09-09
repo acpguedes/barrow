@@ -39,4 +39,3 @@ def test_tmp_pipeline_feather(sample_csv, tmp_path) -> None:
     table = feather.read_table(dst)
     assert table.column_names == ["b", "grp"]
     assert table.to_pydict() == {"b": [5, 6], "grp": ["x", "y"]}
-

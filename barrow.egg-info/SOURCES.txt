@@ -1,3 +1,4 @@
+LICENSE
 README.md
 pyproject.toml
 barrow/__init__.py

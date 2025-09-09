@@ -3,9 +3,31 @@ Name: barrow
 Version: 0.1.0
 Summary: A Bash tool for data manipulation using tabular formats, based on Apache Arrow.
 Author: Barrow Developers
-License: MIT
+License: MIT License
+        
+        Copyright (c) 2024 Barrow Developers
+        
+        Permission is hereby granted, free of charge, to any person obtaining a copy
+        of this software and associated documentation files (the "Software"), to deal
+        in the Software without restriction, including without limitation the rights
+        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        copies of the Software, and to permit persons to whom the Software is
+        furnished to do so, subject to the following conditions:
+        
+        The above copyright notice and this permission notice shall be included in all
+        copies or substantial portions of the Software.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+        SOFTWARE.
+        
 Requires-Python: >=3.11
 Description-Content-Type: text/markdown
+License-File: LICENSE
 Requires-Dist: pyarrow
 Requires-Dist: numpy
 Requires-Dist: duckdb
@@ -20,6 +42,7 @@ Requires-Dist: commitizen; extra == "dev"
 Provides-Extra: docs
 Requires-Dist: mkdocs>=1.5; extra == "docs"
 Requires-Dist: mkdocs-material; extra == "docs"
+Dynamic: license-file
 
 # barrow
 A Bash tool for data manipulation using tabular formats, based on Apache Arrow.
@@ -103,6 +126,22 @@ barrow select "b,grp" --output-format parquet --output result.parquet
 barrow mutate "c=a+b" --input data.csv --input-format csv | \
 barrow groupby grp | \
 barrow summary "c=sum" --output-format parquet --output out.parquet
+```
+
+### Filter → mutate → select → groupby → summary
+```bash
+# filter, mutate, select, groupby, and summarize
+barrow filter "a > 1" --input data.csv --input-format csv | \
+barrow mutate "c=a+b" | \
+barrow select "c,grp" | \
+barrow groupby grp | \
+barrow summary "c=sum"
+```
+
+```csv
+grp,c_sum
+x,7
+y,9
 ```
 
 Note: Writing grouped data to CSV drops grouping metadata; use Parquet to preserve it.

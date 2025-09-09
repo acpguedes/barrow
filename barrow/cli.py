@@ -35,7 +35,9 @@ def _add_io_options(parser: argparse.ArgumentParser) -> None:
 
     parser.add_argument("--input", "-i", help="Input file. Reads STDIN if omitted.")
     parser.add_argument(
-        "--input-format", choices=["csv", "parquet", "feather", "orc"], help="Input format"
+        "--input-format",
+        choices=["csv", "parquet", "feather", "orc"],
+        help="Input format",
     )
     parser.add_argument(
         "--output",
@@ -397,7 +399,9 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawTextHelpFormatter,
     )
     p.add_argument("--input", "-i", help="Input file. Reads STDIN if omitted.")
-    p.add_argument("--input-format", choices=["csv", "parquet", "orc"], help="Input format")
+    p.add_argument(
+        "--input-format", choices=["csv", "parquet", "orc"], help="Input format"
+    )
     p.add_argument(
         "--output-format",
         choices=["csv", "parquet", "orc"],

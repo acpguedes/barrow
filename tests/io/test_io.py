@@ -113,7 +113,9 @@ def test_write_table_uses_format_metadata(tmp_path: Path) -> None:
     assert orc.read_table(out).to_pydict() == {"a": [1]}
 
 
-def test_write_table_to_stdout_uses_format_metadata(monkeypatch, tmp_path: Path) -> None:
+def test_write_table_to_stdout_uses_format_metadata(
+    monkeypatch, tmp_path: Path
+) -> None:
     pq_path = tmp_path / "input.parquet"
     pq.write_table(pa.table({"a": [1]}), pq_path)
     table = read_table(str(pq_path), None)
