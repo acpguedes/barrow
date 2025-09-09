@@ -379,7 +379,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("right_on", help="Join key in the right table")
     p.add_argument("--right", required=True, help="Right input file")
     p.add_argument(
-        "--right-format", choices=["csv", "parquet", "orc"], help="Right file format"
+        "--right-format",
+        choices=["csv", "parquet", "feather", "orc"],
+        help="Right file format",
     )
     p.add_argument(
         "--join-type",

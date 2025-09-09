@@ -5,6 +5,7 @@ import pyarrow as pa
 import pyarrow.csv as csv
 import pyarrow.parquet as pq
 import pyarrow.orc as orc
+import pyarrow.feather as feather
 import pytest
 
 from barrow.cli import main
@@ -172,6 +173,37 @@ def test_join_cli_infers_formats(tmp_path) -> None:
         str(left_path),
         "--right",
         str(right_path),
+        "--output",
+        str(out_path),
+    ]
+    result = subprocess.run(cmd, capture_output=True)
+    assert result.returncode == 0, result.stderr
+    table = csv.read_csv(out_path)
+    assert table.to_pylist() == [{"id": 1, "left_val": "a", "right_val": "x"}]
+
+
+def test_join_cli_handles_feather(tmp_path) -> None:
+    left = pa.table({"id": [1], "left_val": ["a"]})
+    right = pa.table({"id": [1], "right_val": ["x"]})
+    left_path = tmp_path / "left.csv"
+    right_path = tmp_path / "right.feather"
+    out_path = tmp_path / "out.csv"
+    csv.write_csv(left, left_path)
+    feather.write_feather(right, right_path)
+
+    cmd = [
+        sys.executable,
+        "-m",
+        "barrow.cli",
+        "join",
+        "id",
+        "id",
+        "--input",
+        str(left_path),
+        "--right",
+        str(right_path),
+        "--right-format",
+        "feather",
         "--output",
         str(out_path),
     ]
