@@ -1,6 +1,7 @@
 import pyarrow as pa
 import pyarrow.csv as csv
 import pyarrow.parquet as pq
+import pyarrow.orc as orc
 import pytest
 
 
@@ -27,6 +28,20 @@ def sample_parquet(tmp_path, sample_table) -> str:
 
 
 @pytest.fixture
+def sample_orc(tmp_path, sample_table) -> str:
+    """Path to an ORC file with ``sample_table`` data."""
+    path = tmp_path / "data.orc"
+    orc.write_table(sample_table, path)
+    return str(path)
+
+
+@pytest.fixture
 def parquet_table(sample_parquet) -> pa.Table:
     """Table loaded from the ``sample_parquet`` fixture."""
     return pq.read_table(sample_parquet)
+
+
+@pytest.fixture
+def orc_table(sample_orc) -> pa.Table:
+    """Table loaded from the ``sample_orc`` fixture."""
+    return orc.read_table(sample_orc)

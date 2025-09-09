@@ -3,6 +3,7 @@ from __future__ import annotations
 import pyarrow.csv as csv
 import pyarrow.feather as feather
 import pyarrow.parquet as pq
+import pyarrow.orc as orc
 import pytest
 
 from barrow.cli import main
@@ -14,6 +15,7 @@ from barrow.cli import main
         ("--csv", ".csv", csv.read_csv),
         ("--parquet", ".parquet", pq.read_table),
         ("--feather", ".feather", feather.read_table),
+        ("--orc", ".orc", orc.read_table),
     ],
 )
 def test_cli_output_format_flags(tmp_path, sample_csv, sample_table, flag, ext, reader) -> None:

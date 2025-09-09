@@ -3,18 +3,27 @@ import subprocess
 import sys
 
 import pyarrow.csv as csv
+import pytest
 
 
-def test_view_reads_parquet_and_writes_csv(sample_parquet, sample_table) -> None:
+@pytest.mark.parametrize(
+    "fixture, fmt",
+    [
+        ("sample_parquet", "parquet"),
+        ("sample_orc", "orc"),
+    ],
+)
+def test_view_reads_binary_and_writes_csv(fixture, fmt, request, sample_table) -> None:
+    src = request.getfixturevalue(fixture)
     cmd = [
         sys.executable,
         "-m",
         "barrow.cli",
         "view",
         "--input",
-        sample_parquet,
+        src,
         "--output-format",
-        "parquet",
+        fmt,
     ]
     result = subprocess.run(cmd, capture_output=True)
     assert result.returncode == 0, result.stderr
