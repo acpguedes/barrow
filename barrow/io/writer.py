@@ -32,6 +32,10 @@ def write_table(table: pa.Table, path: str | None, format: str | None) -> None:
             fmt = "csv"
         elif ext == ".parquet":
             fmt = "parquet"
+    if fmt is None and table.schema.metadata:
+        fmt_meta = table.schema.metadata.get(b"format")
+        if fmt_meta:
+            fmt = fmt_meta.decode().lower()
     if fmt is None:
         fmt = "csv"
 
