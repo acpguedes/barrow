@@ -35,7 +35,7 @@ def _add_io_options(parser: argparse.ArgumentParser) -> None:
 
     parser.add_argument("--input", "-i", help="Input file. Reads STDIN if omitted.")
     parser.add_argument(
-        "--input-format", choices=["csv", "parquet"], help="Input format"
+        "--input-format", choices=["csv", "parquet", "feather"], help="Input format"
     )
     parser.add_argument(
         "--output",
@@ -43,14 +43,25 @@ def _add_io_options(parser: argparse.ArgumentParser) -> None:
         help="Output file. Writes to STDOUT if omitted.",
     )
     parser.add_argument(
-        "--output-format", choices=["csv", "parquet"], help="Output format"
+        "--output-format", choices=["csv", "parquet", "feather"], help="Output format"
     )
     parser.add_argument(
         "--delimiter",
         help="Field delimiter for CSV input and output",
     )
+    parser.add_argument(
+        "--tmp",
+        "-t",
+        action="store_true",
+        help="Use Feather for intermediate pipe format",
+    )
 
     def _set_io_defaults(args: argparse.Namespace) -> None:
+        if args.tmp:
+            if args.output_format is None:
+                args.output_format = "feather"
+            if args.input is None and args.input_format is None:
+                args.input_format = "feather"
         if args.output_format is None:
             if args.input_format is not None:
                 args.output_format = args.input_format
@@ -60,6 +71,8 @@ def _add_io_options(parser: argparse.ArgumentParser) -> None:
                     args.output_format = "csv"
                 elif ext == ".parquet":
                     args.output_format = "parquet"
+                elif ext == ".feather":
+                    args.output_format = "feather"
 
     parser.set_defaults(_set_io_defaults=_set_io_defaults)
 

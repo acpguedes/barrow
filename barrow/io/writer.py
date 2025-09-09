@@ -6,6 +6,7 @@ import sys
 import pyarrow as pa
 import pyarrow.csv as csv
 import pyarrow.parquet as pq
+import pyarrow.feather as feather
 
 from ..errors import UnsupportedFormatError
 
@@ -25,9 +26,9 @@ def write_table(
     path:
         Destination path. When ``None`` the table is written to ``STDOUT``.
     format:
-        The file format. Supported values are ``"csv"`` and ``"parquet"``.
-        If ``None``, the format is inferred from ``path`` when available and
-        otherwise defaults to CSV.
+        The file format. Supported values are ``"csv"``, ``"parquet"`` and
+        ``"feather"``. If ``None``, the format is inferred from ``path`` when
+        available and otherwise defaults to CSV.
     output_delimiter:
         Field delimiter for CSV outputs. When ``None`` a comma is used.
     """
@@ -39,6 +40,8 @@ def write_table(
             fmt = "csv"
         elif ext == ".parquet":
             fmt = "parquet"
+        elif ext == ".feather":
+            fmt = "feather"
     if fmt is None and table.schema.metadata:
         fmt_meta = table.schema.metadata.get(b"format")
         if fmt_meta:
@@ -70,6 +73,12 @@ def write_table(
             pq.write_table(table, path)
         else:
             pq.write_table(table, sys.stdout.buffer)
+        return
+    if fmt == "feather":
+        if path:
+            feather.write_feather(table, path)
+        else:
+            feather.write_feather(table, sys.stdout.buffer)
         return
     raise UnsupportedFormatError(f"Unsupported format: {format}")
 
