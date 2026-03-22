@@ -45,6 +45,12 @@ Installation = "installation.md"
 [[tool.mkdocs.nav]]
 Usage = "usage.md"
 
+[[tool.mkdocs.nav]]
+Manual = "manual.md"
+
+[[tool.mkdocs.nav]]
+Architecture = "architecture.md"
+
 [tool.mkdocs.theme]
 name = "material"
 

@@ -3,6 +3,7 @@ nav:
   - Installation: installation.md
   - Usage: usage.md
   - Manual: manual.md
+  - Architecture: architecture.md
 docs_dir: docs
 theme:
   name: material
