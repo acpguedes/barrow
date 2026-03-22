@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Iterator
 
-from .nodes import LogicalNode, Scan, Sink
+from .nodes import Aggregate, Join, LogicalNode, Scan, Sink
 
 
 class LogicalPlan:
@@ -80,10 +80,10 @@ def _node_detail(node: LogicalNode) -> str:
     if hasattr(node, "query"):
         return f"query={node.query!r}"
 
-    if hasattr(node, "left_on"):
+    if isinstance(node, Join):
         return f"on={node.left_on}/{node.right_on}, type={node.join_type}"
 
-    if hasattr(node, "group_keys"):
+    if isinstance(node, Aggregate):
         return f"keys={node.group_keys}, aggs={list(node.aggregations.keys())}"
 
     if hasattr(node, "columns"):

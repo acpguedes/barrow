@@ -54,13 +54,14 @@ def _execute(node: LogicalNode) -> ExecutionResult:
         )
 
     # All other nodes have a single child
-    child_result = _execute(node.child)
+    child_result = _execute(node.child)  # type: ignore[attr-defined]
     table = child_result.table
 
     if isinstance(node, Project):
         return _arrow.execute_project(table, node.columns)
 
     if isinstance(node, Filter):
+        assert node.expression is not None
         return _arrow.execute_filter(table, node.expression)
 
     if isinstance(node, Mutate):

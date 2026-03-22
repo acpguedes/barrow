@@ -17,12 +17,12 @@ def test_filter_rows(sample_table, expr_str, expected, caplog):
     with caplog.at_level(logging.DEBUG):
         result = filter_rows(sample_table, parse(expr_str))
     actual = result["a"].to_pylist()
-    assert actual == expected, (
-        f"Filtering '{expr_str}' returned {actual}, expected {expected}"
-    )
-    assert "Filtering with expression" in caplog.text, (
-        f"Missing log entry for expression '{expr_str}'"
-    )
+    assert (
+        actual == expected
+    ), f"Filtering '{expr_str}' returned {actual}, expected {expected}"
+    assert (
+        "Filtering with expression" in caplog.text
+    ), f"Missing log entry for expression '{expr_str}'"
 
 
 @pytest.mark.parametrize("expr_str", ["c > 1", "nosuch(a)"])
@@ -32,9 +32,9 @@ def test_filter_invalid_expression(sample_table, expr_str, caplog):
         with pytest.raises(NameError) as exc_info:
             filter_rows(sample_table, parse(expr_str))
     token = expr_str.split("(")[0].split()[0]
-    assert token in str(exc_info.value), (
-        f"Error message does not reference '{token}': {exc_info.value}"
-    )
-    assert "Filtering with expression" in caplog.text, (
-        f"Missing log entry for expression '{expr_str}'"
-    )
+    assert token in str(
+        exc_info.value
+    ), f"Error message does not reference '{token}': {exc_info.value}"
+    assert (
+        "Filtering with expression" in caplog.text
+    ), f"Missing log entry for expression '{expr_str}'"

@@ -21,7 +21,7 @@ def referenced_names(expr: Expression) -> set[str]:
 
 def _collect_names(expr: Expression, acc: set[str]) -> None:
     if isinstance(expr, Name):
-        acc.add(expr.name)
+        acc.add(expr.identifier)
     elif isinstance(expr, Literal):
         pass
     elif isinstance(expr, UnaryExpression):

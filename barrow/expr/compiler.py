@@ -20,7 +20,7 @@ def to_sql(expr: Expression) -> str:
         return str(expr.value)
 
     if isinstance(expr, Name):
-        return f'"{expr.name}"'
+        return f'"{expr.identifier}"'
 
     if isinstance(expr, UnaryExpression):
         operand = to_sql(expr.operand)
