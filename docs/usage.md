@@ -57,6 +57,46 @@ can also read directly from a file:
 barrow view -i data.parquet
 ```
 
+## New Commands
+
+### Sort
+```bash
+barrow sort 'name,age' -i people.csv
+```
+
+Sort in descending order and write to a file:
+```bash
+barrow sort 'age' --desc -i people.csv -o sorted.csv
+```
+
+### SQL Queries
+Run a SQL query against the input table (referenced as `tbl`):
+```bash
+barrow sql 'SELECT name, age FROM tbl WHERE age > 30' -i people.csv
+```
+
+Aggregate with SQL:
+```bash
+barrow sql 'SELECT grp, SUM(a) AS total FROM tbl GROUP BY grp' -i data.csv
+```
+
+### Window Functions
+Add a row number partitioned by group and ordered by value:
+```bash
+barrow window 'rn=row_number()' --by grp --order-by val -i data.csv
+```
+
+Compute a rolling mean over a time series:
+```bash
+barrow window 'ma=rolling_mean(value, 3)' --order-by date -i timeseries.csv
+```
+
+### Explain Plan
+Inspect the execution plan for a command without running it:
+```bash
+barrow explain filter 'age > 30' -i people.csv
+```
+
 ## Performance Tips
 - Prefer the Parquet format for large datasets to leverage Arrow's columnar layout.
 - Provide explicit `--input-format` and `--output-format` to avoid format detection overhead.

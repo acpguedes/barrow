@@ -1,6 +1,6 @@
 # barrow
 A Bash tool for data manipulation using tabular formats, based on Apache Arrow.
-It supports common data operations like select, filter, mutate, groupby, summary, ungroup, and join.
+It supports common data operations like select, filter, mutate, groupby, summary, ungroup, join, sort, sql, window, and explain.
 Commands read from files or `STDIN` and write to files or `STDOUT` in CSV, Parquet,
 Feather, or ORC format.
 
@@ -119,9 +119,43 @@ Note: Writing grouped data to CSV drops grouping metadata; use Parquet to preser
 
 These pipelines demonstrate reading from `STDIN` and writing to `STDOUT` while combining operations with pipes.
 
+### sort
+`barrow sort COLUMNS [--desc]`
+: Sort rows by column values.
+
+### sql
+`barrow sql QUERY`
+: Execute a SQL query where the input table is named `tbl`.
+
+### window
+`barrow window ASSIGNMENTS [--by COLS] [--order-by COLS]`
+: Apply window functions with optional partitioning and ordering.
+
+### explain
+`barrow explain COMMAND [EXPRESSION]`
+: Show the execution plan for a command without running it.
+
+### Sort, SQL, window, and explain examples
+```bash
+# sort by age descending
+barrow sort 'age' --desc -i people.csv -o sorted.csv
+
+# run a SQL query
+barrow sql 'SELECT name, age FROM tbl WHERE age > 30' -i people.csv
+
+# add a row number with window function
+barrow window 'rn=row_number()' --by grp --order-by val -i data.csv
+
+# inspect the execution plan
+barrow explain filter 'age > 30' -i people.csv
+```
+
 ## Roadmap
-- Support window functions
-- Provide a SQL interface
+- ~~Support window functions~~ (implemented)
+- ~~Provide a SQL interface~~ (implemented)
+- Active projection/filter pushdown in scans
+- Lazy execution mode
+- Backend selection based on cost estimation
 
 ## Testing
 Run the test suite with:

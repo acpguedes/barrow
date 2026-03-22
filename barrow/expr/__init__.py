@@ -13,6 +13,8 @@ from .parser import (
     FunctionCall,
     parse,
 )
+from .analyzer import referenced_names, validate_expression
+from .compiler import to_sql
 
 __all__ = [
     "Expression",
@@ -22,4 +24,7 @@ __all__ = [
     "BinaryExpression",
     "FunctionCall",
     "parse",
+    "referenced_names",
+    "validate_expression",
+    "to_sql",
 ]

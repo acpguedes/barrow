@@ -1,20 +1,28 @@
-"""Custom exceptions for the barrow project."""
+"""Custom exceptions for the barrow project.
 
+This module re-exports the typed error hierarchy from :mod:`barrow.core.errors`
+for backward compatibility.  New code should import directly from
+``barrow.core.errors`` when possible.
+"""
 
-class BarrowError(Exception):
-    """Base class for all custom barrow exceptions."""
-
-
-class InvalidExpressionError(BarrowError):
-    """Raised when an expression cannot be parsed or evaluated."""
-
-
-class UnsupportedFormatError(BarrowError):
-    """Raised when an I/O function receives an unknown format."""
-
+from .core.errors import (
+    BarrowError,
+    BarrowIOError,
+    ExecutionError,
+    FrontendError,
+    InvalidExpressionError,
+    OptimizationError,
+    PlanningError,
+    UnsupportedFormatError,
+)
 
 __all__ = [
     "BarrowError",
+    "BarrowIOError",
+    "ExecutionError",
+    "FrontendError",
     "InvalidExpressionError",
+    "OptimizationError",
+    "PlanningError",
     "UnsupportedFormatError",
 ]

@@ -4,11 +4,9 @@
 
 ## 1. Postura esperada
 
-Ao trabalhar neste projeto, Claude deve assumir uma postura de:
-
-- **engenheiro de manutenção criterioso**, não de autor de reescritas amplas;
-- **editor técnico preciso**, não de redator prolixo sem densidade informacional;
-- **revisor preventivo**, antecipando regressões em CLI, I/O e pipelines.
+- **Engenheiro de manutenção criterioso**, não autor de reescritas amplas.
+- **Editor técnico preciso**, não redator prolixo sem densidade informacional.
+- **Revisor preventivo**, antecipando regressões em CLI, I/O, planos e pipelines.
 
 A prioridade é produzir mudanças confiáveis, localmente justificáveis e fáceis de auditar.
 
@@ -16,125 +14,164 @@ A prioridade é produzir mudanças confiáveis, localmente justificáveis e fác
 
 ## 2. Como interpretar o design do barrow
 
-Claude deve tratar o `barrow` como uma ferramenta de dados orientada por três compromissos principais:
+O barrow é um motor analítico leve orientado por cinco compromissos:
 
-1. **ergonomia shell-first** — comandos pequenos, encadeáveis e previsíveis;
-2. **semântica tabular clara** — operações devem refletir intenções analíticas conhecidas;
-3. **interoperabilidade Arrow** — o núcleo de dados deve continuar limpo e compatível com formatos suportados.
-
-Isso significa que decisões de implementação devem favorecer:
-
-- previsibilidade de entrada/saída;
-- consistência entre subcomandos;
-- mensagens de ajuda e erro que reduzam ambiguidade;
-- testes que capturem comportamento real de uso.
+1. **Ergonomia shell-first** — comandos pequenos, encadeáveis e previsíveis.
+2. **Execução plan-based** — internamente lazy, externamente explícito. Cada comando CLI constrói um plano lógico que é otimizado antes de executar.
+3. **Contratos Arrow-native** — `pa.Table` é o formato canônico entre camadas.
+4. **Polimorfismo de backend** — Arrow para operações vetorizadas; DuckDB para SQL, joins pesados e windows complexas.
+5. **Metadata como estado lógico** — agrupamento e ordenação vivem no plano, não apenas em metadata de schema.
 
 ---
 
-## 3. Estratégia de trabalho recomendada para Claude
+## 3. Arquitetura-alvo
 
-## 3.1. Primeira leitura
+```
+CLI / SQL / API  →  Frontend Adapter  →  LogicalPlan  →  Optimizer  →  Engine  →  Backend (Arrow/DuckDB)  →  I/O Adapters
+```
 
-Antes de mudar qualquer coisa, Claude deve ler o mínimo conjunto necessário de arquivos-fonte para entender:
+Camadas e pacotes:
 
-- onde o comportamento nasce;
-- onde ele é testado;
-- onde ele é documentado;
-- qual é a menor superfície de alteração correta.
-
-## 3.2. Durante a implementação
-
-Claude deve preferir:
-
-- modificações cirúrgicas;
-- nomes explícitos;
-- blocos de lógica pequenos;
-- reutilização de padrões já existentes no código;
-- testes de regressão focados.
-
-Claude deve evitar:
-
-- “limpezas” laterais fora do escopo;
-- reestruturações arquiteturais não solicitadas;
-- mudanças silenciosas em defaults;
-- mensagens vagas de erro;
-- documentação genérica demais para ser útil.
-
-## 3.3. Antes de concluir
-
-Claude deve verificar se:
-
-- o pedido foi atendido integralmente;
-- o diff está coeso;
-- os testes relevantes foram executados;
-- limitações ambientais foram explicitadas;
-- não ficou nenhum comportamento público sem documentação quando documentação era necessária.
+| Camada | Pacote | Responsabilidade |
+|---|---|---|
+| Frontend | `barrow/cli.py` | Receber input do usuário |
+| Adapter | `barrow/frontend/` | Traduzir para LogicalPlan |
+| Core | `barrow/core/` | Nós, plano, propriedades, resultado, erros |
+| Optimizer | `barrow/optimizer/` | Transformar plano com regras |
+| Engine | `barrow/execution/` | Executar plano via backends |
+| Backend | `barrow/execution/backends/` | Arrow ou DuckDB |
+| Operations | `barrow/operations/` | Operações tabulares puras |
+| I/O | `barrow/io/` | Leitura e escrita por formato |
+| Expressões | `barrow/expr/` | Parse, análise e compilação |
 
 ---
 
-## 4. Preferências de implementação
+## 4. Estratégia de trabalho
 
-### 4.1. Em Python
+### 4.1. Primeira leitura
 
-Claude deve favorecer:
+Antes de mudar qualquer coisa, leia:
 
-- funções pequenas e semanticamente diretas;
-- controle de fluxo claro;
-- mensagens de erro de domínio;
-- baixa duplicação sem obscurecer o fluxo.
+- Onde o comportamento nasce (qual camada).
+- Onde ele é testado (qual `tests/` subdir).
+- Onde ele é documentado (docs/, README).
+- Qual é a menor superfície de alteração correta.
 
-### 4.2. Em testes
+### 4.2. Durante a implementação
 
-Claude deve escrever testes que:
+Preferir:
 
-- provem o contrato alterado;
-- falhariam antes da correção;
-- sejam legíveis sem exigir contexto excessivo;
-- fiquem próximos da área funcional correspondente.
+- Modificações cirúrgicas.
+- Nomes explícitos.
+- Reutilização de padrões existentes.
+- `dataclasses.replace()` para transformar nós imutáveis.
+- Imports lazy quando necessário para evitar ciclos.
 
-### 4.3. Em Markdown
+Evitar:
 
-Claude deve escrever documentação com:
+- Limpezas laterais fora do escopo.
+- Reestruturações não solicitadas.
+- Mudanças silenciosas em defaults de I/O.
+- `LogicalNode` com conhecimento de CLI ou I/O.
 
-- estrutura hierárquica forte;
-- terminologia consistente;
-- parágrafos densos, porém legíveis;
-- listas onde melhorarem navegação;
-- exemplos operacionais quando agregarem compreensão.
+### 4.3. Antes de concluir
 
----
+Verificar:
 
-## 5. Checklist específico para este repositório
-
-Ao editar código do `barrow`, Claude deve lembrar que os pontos mais sensíveis são:
-
-- defaults de `--input-format` e `--output-format`;
-- comportamento com `STDIN` e `STDOUT`;
-- diferenças entre CSV e formatos colunares;
-- persistência ou remoção de metadados de agrupamento;
-- robustez de `join`, `summary`, `mutate` e `filter`;
-- UX de ajuda dos subcomandos.
+- O pedido foi atendido integralmente.
+- O diff está coeso e respeita separação de camadas.
+- Testes relevantes passam.
+- Documentação foi atualizada se contrato público mudou.
 
 ---
 
-## 6. Regra editorial especial
+## 5. Preferências de implementação
 
-Quando produzir novos arquivos de orientação, Claude deve buscar um equilíbrio entre:
+### Python
 
-- **completude**, para ser realmente útil;
-- **precisão**, para evitar generalidades vazias;
-- **elegância**, para tornar a leitura fluida;
-- **densidade técnica**, para servir a engenheiros e agentes automatizados.
+- Funções pequenas e semanticamente diretas.
+- `frozen=True` para dataclasses de nós.
+- Erros de domínio (`ExecutionError`, `PlanningError`), nunca `Exception` genérica.
+- Baixa duplicação sem obscurecer o fluxo.
 
-Em outras palavras: escrever pouco demais empobrece; escrever muito sem estrutura degrada. O padrão desejado é documentação densa, organizada e imediatamente operacional.
+### Testes
+
+- Provem o contrato alterado.
+- Falhariam antes da correção.
+- Legíveis sem contexto excessivo.
+- Próximos da área funcional correspondente.
+
+### Markdown
+
+- Hierarquia forte, terminologia consistente.
+- Parágrafos densos, porém legíveis.
+- Exemplos operacionais quando agregarem compreensão.
 
 ---
 
-## 7. Instrução final para Claude
+## 6. Checklist específico
 
-Se houver múltiplas formas válidas de resolver uma tarefa, Claude deve escolher a que melhor combina:
+Pontos mais sensíveis ao editar código do barrow:
 
-- menor risco de regressão;
-- maior clareza para revisão humana;
-- melhor aderência ao estilo atual do repositório;
-- melhor utilidade prática para quem manterá o código depois.
+| Área | Risco |
+|---|---|
+| Integridade do LogicalPlan | Nós órfãos, schemas incompatíveis, walk() quebrado |
+| Regras do optimizer | Ordem de aplicação, idempotência, semântica preservada |
+| Despacho de backend | Arrow vs DuckDB devem produzir resultados equivalentes |
+| I/O adapter isolation | scan/ e sink/ não devem depender de core ou optimizer |
+| Defaults de `--input-format` e `--output-format` | Inferência sutil que afeta todos os comandos |
+| STDIN/STDOUT | Pipes entre comandos, formato intermediário Feather |
+| Metadados `grouped_by` em CSV | Round-trip via comentário no cabeçalho |
+| `_set_io_defaults` em `cli.py` | Lógica delicada de inferência de formato |
+| `_exec_scan` e `_exec_sink` em `engine.py` | Ponte entre plano e I/O legado |
+| Expressões em Arrow vs DuckDB | Mesma expressão deve ter semântica idêntica |
+
+---
+
+## 7. Guia para módulos novos
+
+### `barrow/core/`
+
+- Nós são **imutáveis** — use `dataclasses.replace()` para transformar.
+- `LogicalPlan.walk()` retorna nós bottom-up — Scan primeiro, Sink por último.
+- `ExecutionResult` sempre encapsula `pa.Table` + `LogicalProperties`.
+- Novos tipos de nó devem ser `@dataclass(frozen=True)` com child/children.
+
+### `barrow/optimizer/`
+
+- Regras são funções puras: `node: LogicalNode → LogicalNode`.
+- Recursão pelos children via `getattr(node, attr)` para `child`, `left`, `right`.
+- `dataclasses.replace()` para produzir nós transformados.
+- Testar com planos construídos manualmente, verificar estrutura do resultado.
+
+### `barrow/execution/`
+
+- `execute(node)` é recursivo — executa children primeiro, depois aplica operação.
+- `ArrowBackend` delega para `barrow.operations.*` (imports lazy dentro dos métodos).
+- `DuckDBBackend` delega para `barrow.operations.sql`.
+- Sink e Scan tratam I/O via `barrow.io.read_table/write_table`.
+
+### `barrow/frontend/`
+
+- `cli_to_plan(command, args)` constrói `Scan → Operation → Sink`.
+- Cada builder é uma função privada `_build_X(args)`.
+- Não executa — apenas constrói plano.
+- Window e mutate parsam `NAME=EXPR` assignments.
+
+---
+
+## 8. Regra editorial
+
+Ao produzir documentação, buscar equilíbrio entre completude, precisão, elegância e densidade técnica. Documentação densa, organizada e imediatamente operacional.
+
+---
+
+## 9. Instrução final
+
+Se houver múltiplas formas válidas de resolver uma tarefa, escolha a que combina:
+
+- Menor risco de regressão.
+- Maior clareza para revisão humana.
+- Melhor aderência ao estilo e à arquitetura do repositório.
+- Melhor utilidade prática para quem manterá o código depois.
+- Respeito à separação de camadas da arquitetura plan-based.

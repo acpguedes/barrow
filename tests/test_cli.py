@@ -16,7 +16,7 @@ def test_cli_returns_error_on_exception(monkeypatch, capsys) -> None:
     def fake_read_table(path, fmt, delimiter=None):
         raise InvalidExpressionError("bad format")
 
-    monkeypatch.setattr("barrow.cli.read_table", fake_read_table)
+    monkeypatch.setattr("barrow.io.read_table", fake_read_table)
 
     rc = main(["filter", "a > 1", "--input", "in.csv", "--output", "out.parquet"])
     assert rc == 1
