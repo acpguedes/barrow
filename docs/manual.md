@@ -148,3 +148,13 @@ EXPRESSION: the expression or columns for that command.
 ```
 barrow explain filter 'age > 30' -i people.csv
 ```
+
+## Benchmark de comandos
+
+Para comparar operações individuais e pipelines completos, use `scripts/benchmark.sh`. O script cria automaticamente arquivos CSV de teste pequenos, médios e grandes, mede comandos equivalentes em fluxo normal, com `--tmp` e com SQL quando fizer sentido, e registra os tempos em `results.tsv` no diretório de trabalho escolhido.
+
+```bash
+scripts/benchmark.sh --datasets small,medium --iterations 5
+```
+
+Se quiser focar em grupos específicos, use `--only`, por exemplo `--only filter,sql,pipeline`. Para remover os artefatos gerados ao final, use `--cleanup`.
