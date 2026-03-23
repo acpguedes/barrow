@@ -36,6 +36,12 @@ make test    # run the test suite
 make clean   # remove build artifacts
 ```
 
+For quick CLI performance comparisons, use `scripts/benchmark.sh`. The script generates small, medium, and large CSV fixtures automatically, runs representative commands and pipelines (including `--tmp` and SQL variants), and saves timing results to `results.tsv` inside the chosen workspace.
+
+```bash
+scripts/benchmark.sh --datasets small,medium --iterations 5
+```
+
 ## Usage
 All subcommands accept `--input`/`-i`, `--input-format`, `--output`/`-o`, and
 `--output-format` to control I/O. These options support `csv`, `parquet`,
