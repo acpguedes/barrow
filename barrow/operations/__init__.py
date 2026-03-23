@@ -14,6 +14,7 @@ from .ungroup import ungroup
 from .join import join
 from .window import window
 from .sql import sql
+from .sort import sort
 
 __all__ = [
     "select",
@@ -25,4 +26,5 @@ __all__ = [
     "join",
     "window",
     "sql",
+    "sort",
 ]

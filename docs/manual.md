@@ -78,3 +78,73 @@ barrow view -i data.parquet
 ```
 
 `view` accepts `--output-format` for API compatibility but always writes CSV to `STDOUT`.
+
+## sort
+Sort rows by column values.
+
+```
+barrow sort COLUMNS [options]
+```
+
+COLUMNS: comma-separated column names to sort by.
+
+- `--desc`: sort in descending order.
+
+```
+barrow sort 'name,age' -i people.csv
+```
+
+```
+barrow sort 'age' --desc -i people.csv -o sorted.csv
+```
+
+## sql
+Execute a SQL query.
+
+```
+barrow sql QUERY [options]
+```
+
+QUERY: SQL query where the input table is named `tbl`.
+
+```
+barrow sql 'SELECT name, age FROM tbl WHERE age > 30' -i people.csv
+```
+
+```
+barrow sql 'SELECT grp, SUM(a) AS total FROM tbl GROUP BY grp' -i data.csv
+```
+
+## window
+Apply window functions.
+
+```
+barrow window ASSIGNMENTS [--by COLS] [--order-by COLS] [options]
+```
+
+ASSIGNMENTS: comma-separated `NAME=EXPR` pairs.
+
+- `--by`: partition columns (comma-separated).
+- `--order-by`: order columns within partitions (comma-separated).
+
+```
+barrow window 'rn=row_number()' --by grp --order-by val -i data.csv
+```
+
+```
+barrow window 'ma=rolling_mean(value, 3)' --order-by date -i timeseries.csv
+```
+
+## explain
+Show execution plan.
+
+```
+barrow explain COMMAND [EXPRESSION] [options]
+```
+
+COMMAND: the command to explain (filter, select, sort, etc.).
+EXPRESSION: the expression or columns for that command.
+
+```
+barrow explain filter 'age > 30' -i people.csv
+```

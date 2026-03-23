@@ -13,18 +13,11 @@ try:  # pragma: no cover - optional dependency
 except Exception:  # pragma: no cover - optional dependency
     argcomplete = None
 
+from .core.plan import format_plan
 from .errors import BarrowError
-from .expr import Expression, parse
-from .io import read_table, write_table
-from .operations import (
-    filter as op_filter,
-    groupby as op_groupby,
-    join as op_join,
-    mutate as op_mutate,
-    select as op_select,
-    summary as op_summary,
-    ungroup as op_ungroup,
-)
+from .execution import execute
+from .frontend.cli_to_plan import cli_to_plan
+from .optimizer import optimize
 
 
 def _add_io_options(parser: argparse.ArgumentParser) -> None:
@@ -125,15 +118,9 @@ def _cmd_filter(args: argparse.Namespace) -> int:
     not specified.
     """
 
-    table = read_table(args.input, args.input_format, args.delimiter)
-    expr = parse(args.expression)
-    table = op_filter(table, expr)
-    write_table(
-        table,
-        args.output,
-        args.output_format,
-        args.output_delimiter or args.delimiter,
-    )
+    plan = cli_to_plan("filter", args)
+    optimized = optimize(plan)
+    execute(optimized.root)
     return 0
 
 
@@ -144,15 +131,9 @@ def _cmd_select(args: argparse.Namespace) -> int:
     provided.
     """
 
-    table = read_table(args.input, args.input_format, args.delimiter)
-    cols = [c.strip() for c in args.columns.split(",") if c.strip()]
-    table = op_select(table, cols)
-    write_table(
-        table,
-        args.output,
-        args.output_format,
-        args.output_delimiter or args.delimiter,
-    )
+    plan = cli_to_plan("select", args)
+    optimized = optimize(plan)
+    execute(optimized.root)
     return 0
 
 
@@ -163,21 +144,9 @@ def _cmd_mutate(args: argparse.Namespace) -> int:
     output.
     """
 
-    table = read_table(args.input, args.input_format, args.delimiter)
-    pairs = [p.strip() for p in args.assignments.split(",") if p.strip()]
-    expressions: dict[str, Expression] = {}
-    for pair in pairs:
-        if "=" not in pair:
-            raise BarrowError("mutate arguments must be NAME=EXPR")
-        name, expr_str = pair.split("=", 1)
-        expressions[name.strip()] = parse(expr_str.strip())
-    table = op_mutate(table, **expressions)
-    write_table(
-        table,
-        args.output,
-        args.output_format,
-        args.output_delimiter or args.delimiter,
-    )
+    plan = cli_to_plan("mutate", args)
+    optimized = optimize(plan)
+    execute(optimized.root)
     return 0
 
 
@@ -187,15 +156,9 @@ def _cmd_groupby(args: argparse.Namespace) -> int:
     When ``--output-format`` is omitted, the output matches the input format.
     """
 
-    table = read_table(args.input, args.input_format, args.delimiter)
-    cols = [c.strip() for c in args.columns.split(",") if c.strip()]
-    table = op_groupby(table, cols)
-    write_table(
-        table,
-        args.output,
-        args.output_format,
-        args.output_delimiter or args.delimiter,
-    )
+    plan = cli_to_plan("groupby", args)
+    optimized = optimize(plan)
+    execute(optimized.root)
     return 0
 
 
@@ -205,21 +168,9 @@ def _cmd_summary(args: argparse.Namespace) -> int:
     The output uses the input format unless ``--output-format`` is given.
     """
 
-    table = read_table(args.input, args.input_format, args.delimiter)
-    pairs = [p.strip() for p in args.aggregations.split(",") if p.strip()]
-    aggregations: dict[str, str] = {}
-    for pair in pairs:
-        if "=" not in pair:
-            raise BarrowError("summary arguments must be COLUMN=AGG")
-        col, agg = pair.split("=", 1)
-        aggregations[col.strip()] = agg.strip()
-    result = op_summary(table, aggregations)
-    write_table(
-        result,
-        args.output,
-        args.output_format,
-        args.output_delimiter or args.delimiter,
-    )
+    plan = cli_to_plan("summary", args)
+    optimized = optimize(plan)
+    execute(optimized.root)
     return 0
 
 
@@ -229,14 +180,9 @@ def _cmd_ungroup(args: argparse.Namespace) -> int:
     Output format defaults to the input format when not specified.
     """
 
-    table = read_table(args.input, args.input_format, args.delimiter)
-    table = op_ungroup(table)
-    write_table(
-        table,
-        args.output,
-        args.output_format,
-        args.output_delimiter or args.delimiter,
-    )
+    plan = cli_to_plan("ungroup", args)
+    optimized = optimize(plan)
+    execute(optimized.root)
     return 0
 
 
@@ -247,15 +193,9 @@ def _cmd_join(args: argparse.Namespace) -> int:
     input.
     """
 
-    left = read_table(args.input, args.input_format, args.delimiter)
-    right = read_table(args.right, args.right_format, args.delimiter)
-    result = op_join(left, right, args.left_on, args.right_on, args.join_type)
-    write_table(
-        result,
-        args.output,
-        args.output_format,
-        args.output_delimiter or args.delimiter,
-    )
+    plan = cli_to_plan("join", args)
+    optimized = optimize(plan)
+    execute(optimized.root)
     return 0
 
 
@@ -266,8 +206,62 @@ def _cmd_view(args: argparse.Namespace) -> int:
     table is always written to ``STDOUT`` in CSV format.
     """
 
-    table = read_table(args.input, args.input_format, args.delimiter)
-    write_table(table, None, "csv", args.output_delimiter or args.delimiter)
+    plan = cli_to_plan("view", args)
+    optimized = optimize(plan)
+    execute(optimized.root)
+    return 0
+
+
+def _cmd_sort(args: argparse.Namespace) -> int:
+    plan = cli_to_plan("sort", args)
+    optimized = optimize(plan)
+    execute(optimized.root)
+    return 0
+
+
+def _cmd_sql(args: argparse.Namespace) -> int:
+    plan = cli_to_plan("sql", args)
+    optimized = optimize(plan)
+    execute(optimized.root)
+    return 0
+
+
+def _cmd_window(args: argparse.Namespace) -> int:
+    plan = cli_to_plan("window", args)
+    optimized = optimize(plan)
+    execute(optimized.root)
+    return 0
+
+
+def _cmd_explain(args: argparse.Namespace) -> int:
+    cmd = args.explain_command
+    # Build a namespace compatible with cli_to_plan
+    import copy
+
+    plan_args = copy.copy(args)
+    if cmd in ("filter",):
+        plan_args.expression = args.expression
+    elif cmd in ("select", "groupby", "sort"):
+        plan_args.columns = args.expression
+    elif cmd in ("mutate", "window"):
+        plan_args.assignments = args.expression
+    elif cmd in ("summary",):
+        plan_args.aggregations = args.expression
+    elif cmd in ("sql",):
+        plan_args.query = args.expression
+    # Set IO defaults
+    plan_args.output = None
+    plan_args.output_format = None
+    plan_args.delimiter = None
+    plan_args.output_delimiter = None
+
+    plan = cli_to_plan(cmd, plan_args)
+    print("Logical Plan:")
+    print(format_plan(plan.root))
+    print()
+    optimized = optimize(plan)
+    print("Optimized Plan:")
+    print(format_plan(optimized.root))
     return 0
 
 
@@ -419,6 +413,75 @@ def build_parser() -> argparse.ArgumentParser:
         help="Field delimiter for CSV output",
     )
     p.set_defaults(func=_cmd_view)
+
+    p = subparsers.add_parser(
+        "sort",
+        help="Sort rows by column values",
+        description=(
+            "Sort rows using one or more columns.\n"
+            "By default rows are sorted in ascending order."
+        ),
+        epilog="Example:\n  barrow sort 'name,age' -i people.csv --desc",
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    _add_io_options(p)
+    p.add_argument("columns", help="Comma-separated column names to sort by")
+    p.add_argument("--desc", action="store_true", help="Sort in descending order")
+    p.set_defaults(func=_cmd_sort)
+
+    p = subparsers.add_parser(
+        "sql",
+        help="Execute a SQL query against the input table",
+        description=(
+            "Run a SQL query using DuckDB. The input table is available\n"
+            "as 'tbl' in the query."
+        ),
+        epilog="Example:\n  barrow sql 'SELECT name, age FROM tbl WHERE age > 30' -i people.csv",
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    _add_io_options(p)
+    p.add_argument("query", help="SQL query to execute (table is named 'tbl')")
+    p.set_defaults(func=_cmd_sql)
+
+    p = subparsers.add_parser(
+        "window",
+        help="Apply window functions",
+        description=(
+            "Compute window functions over partitions of the data.\n"
+            "Use --by to partition and --order-by to order within partitions."
+        ),
+        epilog="Example:\n  barrow window 'rn=row_number()' --by grp --order-by val -i data.csv",
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    _add_io_options(p)
+    p.add_argument("assignments", help="Comma-separated NAME=EXPR pairs")
+    p.add_argument("--by", help="Comma-separated partition columns")
+    p.add_argument("--order-by", help="Comma-separated order columns")
+    p.set_defaults(func=_cmd_window)
+
+    p = subparsers.add_parser(
+        "explain",
+        help="Show the execution plan without running it",
+        description=(
+            "Display the logical and optimized plans for a command.\n"
+            "Useful for understanding how barrow will execute a pipeline."
+        ),
+        epilog="Example:\n  barrow explain filter 'age > 30' -i people.csv",
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    # explain needs the subcommand and its args
+    # For simplicity, accept command name + expression/columns as positional
+    p.add_argument("explain_command", help="Command to explain (filter, select, etc.)")
+    p.add_argument(
+        "expression", nargs="?", help="Expression or columns for the command"
+    )
+    p.add_argument("--input", "-i", help="Input file")
+    p.add_argument(
+        "--input-format",
+        choices=["csv", "parquet", "feather", "orc"],
+        help="Input format",
+    )
+    p.set_defaults(func=_cmd_explain)
 
     return parser
 

@@ -584,3 +584,24 @@ The ideal final version of `barrow` is not just a collection of CLI subcommands.
 - and Arrow as the interoperability spine.
 
 That architecture keeps the current usability of the project while giving it a credible path toward better performance, cleaner extensibility, and a more coherent product surface.
+
+## Phase 1 implementation status
+
+The following components from the target architecture have been implemented:
+
+### Completed
+- Core logical layer: `LogicalNode`, `LogicalPlan`, `ExecutionResult`, `LogicalProperties`
+- Optimizer with rules: simplify, fusion, filter pushdown, projection pushdown, backend selection
+- Execution engine with Arrow and DuckDB backends
+- Frontend adapters: `cli_to_plan`, `sql_to_plan`
+- I/O adapters: per-format scan and sink modules
+- Expression enhancements: `analyzer.py`, `compiler.py`
+- New CLI commands: `sort`, `sql`, `window`, `explain`
+- Typed error hierarchy in `barrow.core.errors`
+- All existing CLI commands rewired through the plan-based pipeline
+
+### Next steps (Phase 2)
+- Active projection/filter pushdown in scans
+- Lazy execution mode
+- Backend selection based on cost estimation
+- Chunked/streaming execution for stateless operations

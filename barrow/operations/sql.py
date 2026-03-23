@@ -15,7 +15,10 @@ def sql(table: pa.Table, query: str) -> pa.Table:
     con = duckdb.connect()
     try:
         con.register("tbl", table)
-        return con.execute(query).arrow()
+        result = con.execute(query)
+        if hasattr(result, "to_arrow_table"):
+            return result.to_arrow_table()
+        return result.fetch_arrow_table()
     finally:
         con.close()
 
