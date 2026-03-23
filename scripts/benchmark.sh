@@ -17,9 +17,12 @@ Options:
                       Default: .benchmarks
   --sizes SPEC        Dataset sizes as small:medium:large row counts.
                       Default: 1000:50000:200000
-  --iterations N      Number of hot runs per benchmark. Default: 3
-  --warmup N          Number of warmup runs before hot runs. Default: 1
-  --cold-runs N       Number of cold runs per benchmark. Default: 1
+  --iterations N      Number of runs per enabled phase per benchmark.
+                      Default: 3
+  --warmup N          Enable warmup when N > 0. The warmup phase uses the
+                      same run count as --iterations. Default: 1
+  --cold-runs N       Enable cold when N > 0. The cold phase uses the same
+                      run count as --iterations. Default: 1
   --barrow-cmd CMD    Command used to invoke barrow.
                       Default: barrow, or 'python -m barrow.cli' if unavailable
   --datasets LIST     Comma-separated dataset labels to run: small,medium,large
@@ -37,7 +40,7 @@ Phases:
 
 Examples:
   scripts/benchmark.sh
-  scripts/benchmark.sh --iterations 5 --warmup 2 --datasets medium,large
+  scripts/benchmark.sh --iterations 5 --warmup 1 --datasets medium,large
   scripts/benchmark.sh --only filter,mutate,sql,pipeline --workspace /tmp/barrow-bench
 USAGE
 }
@@ -173,7 +176,8 @@ CONFIG
 echo "==> Workspace: $workspace"
 echo "==> Command: $barrow_cmd"
 echo "==> Sizes: small=$rows_small medium=$rows_medium large=$rows_large"
-echo "==> Runs: cold=$cold_runs warmup=$warmup hot=$iterations"
+echo "==> Runs per enabled phase: $iterations"
+echo "==> Enabled phases: cold=$([[ $cold_runs -gt 0 ]] && echo yes || echo no) warmup=$([[ $warmup -gt 0 ]] && echo yes || echo no) hot=yes"
 
 echo "==> Generating fixtures"
 python - <<PY "$workspace" "$rows_small" "$rows_medium" "$rows_large"
@@ -313,8 +317,19 @@ measure() {
   local outdir="$5"
   local command="$6"
 
-  measure_phase "$dataset" "$rows" "$benchmark" "$variant" cold "$cold_runs" "$outdir" "$command"
-  measure_phase "$dataset" "$rows" "$benchmark" "$variant" warmup "$warmup" "$outdir" "$command"
+  local cold_count=0
+  local warmup_count=0
+
+  if [[ "$cold_runs" -gt 0 ]]; then
+    cold_count="$iterations"
+  fi
+
+  if [[ "$warmup" -gt 0 ]]; then
+    warmup_count="$iterations"
+  fi
+
+  measure_phase "$dataset" "$rows" "$benchmark" "$variant" cold "$cold_count" "$outdir" "$command"
+  measure_phase "$dataset" "$rows" "$benchmark" "$variant" warmup "$warmup_count" "$outdir" "$command"
   measure_phase "$dataset" "$rows" "$benchmark" "$variant" hot "$iterations" "$outdir" "$command"
 }
 
@@ -337,21 +352,21 @@ benchmark_dataset() {
   if should_run filter; then
     measure "$dataset" "$rows" filter direct "$outdir" \
       "$barrow_cmd filter 'a > 400' -i '$input' -o '$outdir/filter.csv'"
-    measure "$dataset" "$rows" filter sql_equivalent "$outdir" \
+    measure "$dataset" "$rows" filter sql_equivalent_filter "$outdir" \
       "$barrow_cmd sql \"SELECT * FROM tbl WHERE a > 400\" -i '$input' -o '$outdir/filter_sql.csv'"
   fi
 
   if should_run select; then
     measure "$dataset" "$rows" select direct "$outdir" \
       "$barrow_cmd select 'id,grp,subgrp,region,a,value,score' -i '$input' -o '$outdir/select.csv'"
-    measure "$dataset" "$rows" select sql_equivalent "$outdir" \
+    measure "$dataset" "$rows" select sql_equivalent_select "$outdir" \
       "$barrow_cmd sql \"SELECT id, grp, subgrp, region, a, value, score FROM tbl\" -i '$input' -o '$outdir/select_sql.csv'"
   fi
 
   if should_run mutate; then
     measure "$dataset" "$rows" mutate direct "$outdir" \
       "$barrow_cmd mutate 'total=a+b,scaled=value*2,priority_band=priority+10,tag=grp' -i '$input' -o '$outdir/mutate.csv'"
-    measure "$dataset" "$rows" mutate sql_equivalent "$outdir" \
+    measure "$dataset" "$rows" mutate sql_equivalent_mutate "$outdir" \
       "$barrow_cmd sql \"SELECT *, a + b AS total, value * 2 AS scaled, priority + 10 AS priority_band, grp AS tag FROM tbl\" -i '$input' -o '$outdir/mutate_sql.csv'"
   fi
 
@@ -365,7 +380,7 @@ benchmark_dataset() {
   if should_run summary; then
     measure "$dataset" "$rows" summary pipeline "$outdir" \
       "$barrow_cmd groupby 'grp,category,region' -i '$input' --tmp | $barrow_cmd summary 'a=sum,b=mean,id=count,score=max' --parquet -o '$outdir/summary.parquet'"
-    measure "$dataset" "$rows" summary sql_equivalent "$outdir" \
+    measure "$dataset" "$rows" summary sql_equivalent_summary "$outdir" \
       "$barrow_cmd sql \"SELECT grp, category, region, SUM(a) AS sum_a, AVG(b) AS avg_b, COUNT(id) AS rows, MAX(score) AS max_score FROM tbl GROUP BY grp, category, region\" -i '$input' --parquet -o '$outdir/summary_sql.parquet'"
   fi
 
@@ -388,7 +403,7 @@ benchmark_dataset() {
   if should_run window; then
     measure "$dataset" "$rows" window partitioned "$outdir" \
       "$barrow_cmd window 'rn=row_number()' --by grp --order-by ts -i '$input' --parquet -o '$outdir/window.parquet'"
-    measure "$dataset" "$rows" window sql_equivalent "$outdir" \
+    measure "$dataset" "$rows" window sql_equivalent_partitioned "$outdir" \
       "$barrow_cmd sql \"SELECT *, ROW_NUMBER() OVER (PARTITION BY grp ORDER BY ts) AS rn FROM tbl\" -i '$input' --parquet -o '$outdir/window_sql.parquet'"
   fi
 
@@ -400,7 +415,7 @@ benchmark_dataset() {
   if should_run join; then
     measure "$dataset" "$rows" join inner "$outdir" \
       "$barrow_cmd join id id --right '$right_input' --right-format csv -i '$input' --parquet -o '$outdir/join.parquet'"
-    measure "$dataset" "$rows" join sql_equivalent "$outdir" \
+    measure "$dataset" "$rows" join sql_equivalent_inner "$outdir" \
       "$barrow_cmd sql \"SELECT l.*, r.segment, r.weight, r.status FROM tbl AS l INNER JOIN read_csv_auto('$right_input') AS r ON l.id = r.id\" -i '$input' --parquet -o '$outdir/join_sql.parquet'"
   fi
 

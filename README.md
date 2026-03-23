@@ -36,7 +36,7 @@ make test    # run the test suite
 make clean   # remove build artifacts
 ```
 
-For quick CLI performance comparisons, use `scripts/benchmark.sh`. The script generates small, medium, and large CSV fixtures automatically, runs representative commands and pipelines across explicit `cold`, `warmup`, and `hot` phases, includes SQL equivalents for the basic operations where they make sense, and saves detailed timings to `results.tsv` plus final summaries in `summary.md` and `summary.json` inside the chosen workspace.
+For quick CLI performance comparisons, use `scripts/benchmark.sh`. The script generates small, medium, and large CSV fixtures automatically, runs representative commands and pipelines across explicit `cold`, `warmup`, and `hot` phases, uses the same `--iterations` run count for every enabled phase of a variant, includes SQL equivalents for the basic operations where they make sense, and saves detailed timings to `results.tsv` plus final summaries in `summary.md` and `summary.json` inside the chosen workspace.
 
 ```bash
 scripts/benchmark.sh --datasets small,medium --iterations 5

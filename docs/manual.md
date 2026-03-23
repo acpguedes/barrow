@@ -151,10 +151,10 @@ barrow explain filter 'age > 30' -i people.csv
 
 ## Benchmark de comandos
 
-Para comparar operações individuais e pipelines completos, use `scripts/benchmark.sh`. O script cria automaticamente arquivos CSV de teste pequenos, médios e grandes, mede variações em fases explícitas de `cold`, `warmup` e `hot`, adiciona equivalentes em SQL para as operações básicas quando fizer sentido e registra os tempos detalhados em `results.tsv`, além de gerar `summary.md` e `summary.json` no diretório de trabalho escolhido.
+Para comparar operações individuais e pipelines completos, use `scripts/benchmark.sh`. O script cria automaticamente arquivos CSV de teste pequenos, médios e grandes, mede variações em fases explícitas de `cold`, `warmup` e `hot`, usa o mesmo total de `--iterations` para cada fase habilitada de uma variante, adiciona equivalentes em SQL para as operações básicas quando fizer sentido e registra os tempos detalhados em `results.tsv`, além de gerar `summary.md` e `summary.json` no diretório de trabalho escolhido.
 
 ```bash
 scripts/benchmark.sh --datasets small,medium --iterations 5
 ```
 
-Se quiser focar em grupos específicos, use `--only`, por exemplo `--only filter,sql,pipeline`. Use `--warmup` para controlar quantas execuções preparam a fase hot, `--cold-runs` para repetir a fase cold e `--cleanup` para remover os artefatos gerados ao final mantendo os resultados e summaries.
+Se quiser focar em grupos específicos, use `--only`, por exemplo `--only filter,sql,pipeline`. Use `--warmup` e `--cold-runs` para habilitar ou desabilitar as fases preparatórias, `--iterations` para controlar quantas execuções cada fase habilitada registra por variante e `--cleanup` para remover os artefatos gerados ao final mantendo os resultados e summaries.
