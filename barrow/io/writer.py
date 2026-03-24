@@ -4,10 +4,6 @@ from pathlib import Path
 import sys
 
 import pyarrow as pa
-import pyarrow.csv as csv
-import pyarrow.parquet as pq
-import pyarrow.feather as feather
-import pyarrow.orc as orc
 
 from ..errors import UnsupportedFormatError
 
@@ -53,6 +49,8 @@ def write_table(
         fmt = "csv"
 
     if fmt == "csv":
+        import pyarrow.csv as csv
+
         grouped = (
             table.schema.metadata.get(b"grouped_by") if table.schema.metadata else None
         )
@@ -72,18 +70,24 @@ def write_table(
             csv.write_csv(table, sys.stdout.buffer, write_options=write_options)
         return
     if fmt == "parquet":
+        import pyarrow.parquet as pq
+
         if path:
             pq.write_table(table, path)
         else:
             pq.write_table(table, sys.stdout.buffer)
         return
     if fmt == "feather":
+        import pyarrow.feather as feather
+
         if path:
             feather.write_feather(table, path)
         else:
             feather.write_feather(table, sys.stdout.buffer)
         return
     if fmt == "orc":
+        import pyarrow.orc as orc
+
         if path:
             orc.write_table(table, path)
         else:

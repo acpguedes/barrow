@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import os
+import sys
+import time
 
 from barrow.core.errors import ExecutionError
 from barrow.core.nodes import (
@@ -28,6 +31,8 @@ from .backends.duckdb_backend import DuckDBBackend
 
 _arrow = ArrowBackend()
 _duckdb = DuckDBBackend()
+
+_PROFILE = os.environ.get("BARROW_PROFILE") == "1"
 
 
 def execute(node: LogicalNode) -> ExecutionResult:
@@ -96,6 +101,7 @@ def _execute(node: LogicalNode) -> ExecutionResult:
 
 def _exec_scan(node: Scan) -> ExecutionResult:
     """Execute a Scan node by reading from file or STDIN."""
+    t0 = time.perf_counter() if _PROFILE else 0.0
     from barrow.io import read_table
 
     table = read_table(node.path, node.format, node.delimiter)
@@ -104,13 +110,26 @@ def _exec_scan(node: Scan) -> ExecutionResult:
         cols = [c for c in node.columns if c in available]
         if cols:
             table = table.select(cols)
+    if _PROFILE:
+        elapsed = time.perf_counter() - t0
+        print(
+            f"BARROW_PROFILE: scan={elapsed:.4f}s rows={table.num_rows} cols={table.num_columns}",
+            file=sys.stderr,
+        )
     return ExecutionResult(table)
 
 
 def _exec_sink(node: Sink) -> ExecutionResult:
     """Execute a Sink node by writing to file or STDOUT."""
     child_result = _execute(node.child)
+    t0 = time.perf_counter() if _PROFILE else 0.0
     from barrow.io import write_table
 
     write_table(child_result.table, node.path, node.format, node.delimiter)
+    if _PROFILE:
+        elapsed = time.perf_counter() - t0
+        print(
+            f"BARROW_PROFILE: sink={elapsed:.4f}s rows={child_result.table.num_rows}",
+            file=sys.stderr,
+        )
     return child_result

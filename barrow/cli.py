@@ -489,6 +489,12 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     """Entry point for the ``barrow`` command line tool."""
 
+    _profile = os.environ.get("BARROW_PROFILE") == "1"
+    if _profile:
+        import time
+
+        _t_start = time.perf_counter()
+
     parser = build_parser()
     if argcomplete:  # pragma: no cover - optional dependency
         argcomplete.autocomplete(parser)
@@ -498,11 +504,28 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     if hasattr(args, "_set_io_defaults"):
         args._set_io_defaults(args)
+
+    if _profile:
+        _t_parsed = time.perf_counter()
+        print(
+            f"BARROW_PROFILE: startup={_t_parsed - _t_start:.4f}s",
+            file=sys.stderr,
+        )
+
     try:
-        return args.func(args)
+        result = args.func(args)
     except BarrowError as exc:  # pragma: no cover - error path
         print(str(exc), file=sys.stderr)
         return 1
+
+    if _profile:
+        _t_end = time.perf_counter()
+        print(
+            f"BARROW_PROFILE: total={_t_end - _t_start:.4f}s",
+            file=sys.stderr,
+        )
+
+    return result
 
 
 if __name__ == "__main__":  # pragma: no cover

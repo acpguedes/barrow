@@ -6,6 +6,7 @@ import logging
 import pyarrow as pa
 
 from ..expr import Expression
+from ..expr.analyzer import referenced_names
 from ._env import build_env
 from ._expr_eval import evaluate_expression
 
@@ -21,7 +22,7 @@ def filter(table: pa.Table, expression: Expression) -> pa.Table:
     :func:`~barrow.operations._env.build_env`.
     """
     logger.debug("Filtering with expression %s", expression)
-    env = build_env(table)
+    env = build_env(table, columns=referenced_names(expression))
     mask = evaluate_expression(expression, env)
     logger.debug("Filter mask length %d", len(mask))
     result = table.filter(pa.array(mask))

@@ -5,10 +5,6 @@ import sys
 
 import csv as stdcsv
 import pyarrow as pa
-import pyarrow.csv as csv
-import pyarrow.parquet as pq
-import pyarrow.feather as feather
-import pyarrow.orc as orc
 
 from ..errors import UnsupportedFormatError
 
@@ -69,6 +65,8 @@ def read_table(
             fmt = _detect_format(None, data)
 
     if fmt == "csv":
+        import pyarrow.csv as csv
+
         metadata: dict[bytes, bytes] = {b"format": fmt.encode()}
         prefix = b"# grouped_by:"
         delimiter = input_delimiter
@@ -115,6 +113,8 @@ def read_table(
             )
         return table
     if fmt == "feather":
+        import pyarrow.feather as feather
+
         if path:
             table = feather.read_table(path)
         else:
@@ -126,6 +126,8 @@ def read_table(
         )
         return table
     if fmt == "parquet":
+        import pyarrow.parquet as pq
+
         if path:
             table = pq.read_table(path)
         else:
@@ -137,6 +139,8 @@ def read_table(
         )
         return table
     if fmt == "orc":
+        import pyarrow.orc as orc
+
         if path:
             table = orc.read_table(path)
         else:

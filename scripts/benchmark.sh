@@ -507,6 +507,21 @@ benchmark_dataset() {
       "$barrow_cmd filter 'a > 200' -i '$input' --tmp | $barrow_cmd mutate 'total=a+b,weighted=score+value' --tmp | $barrow_cmd select 'id,grp,region,total,weighted,category' --tmp | $barrow_cmd sort 'grp,total' --parquet -o '$outdir/pipeline_tmp.parquet'"
     measure "$dataset" "$rows" pipeline sql_vs_commands "$outdir" \
       "$barrow_cmd sql \"SELECT id, grp, region, a + b AS total, score + value AS weighted, category FROM tbl WHERE a > 200 ORDER BY grp, total\" -i '$input' --parquet -o '$outdir/pipeline_sql.parquet'"
+
+    # --- Composite scenarios ---
+    # ETL: filter → mutate → groupby → summary
+    measure "$dataset" "$rows" pipeline etl_pipe "$outdir" \
+      "$barrow_cmd filter 'a > 200' -i '$input' | $barrow_cmd mutate 'total=a+b' | $barrow_cmd groupby 'grp,category' --tmp | $barrow_cmd summary 'total=sum,a=count' --parquet -o '$outdir/etl_pipe.parquet'"
+    measure "$dataset" "$rows" pipeline etl_tmp "$outdir" \
+      "$barrow_cmd filter 'a > 200' -i '$input' --tmp | $barrow_cmd mutate 'total=a+b' --tmp | $barrow_cmd groupby 'grp,category' --tmp | $barrow_cmd summary 'total=sum,a=count' --parquet -o '$outdir/etl_tmp.parquet'"
+    measure "$dataset" "$rows" pipeline etl_sql "$outdir" \
+      "$barrow_cmd sql \"SELECT grp, category, SUM(a + b) AS sum_total, COUNT(a) AS count_a FROM tbl WHERE a > 200 GROUP BY grp, category\" -i '$input' --parquet -o '$outdir/etl_sql.parquet'"
+
+    # Analytics: join → window → sort → select
+    measure "$dataset" "$rows" pipeline analytics_pipe "$outdir" \
+      "$barrow_cmd join id id --right '$right_input' --right-format csv -i '$input' | $barrow_cmd window 'rn=row_number()' --by grp --order-by ts --tmp | $barrow_cmd sort 'grp,rn' --tmp | $barrow_cmd select 'id,grp,region,segment,rn' --parquet -o '$outdir/analytics_pipe.parquet'"
+    measure "$dataset" "$rows" pipeline analytics_sql "$outdir" \
+      "$barrow_cmd sql \"SELECT l.id, l.grp, l.region, r.segment, ROW_NUMBER() OVER (PARTITION BY l.grp ORDER BY l.ts) AS rn FROM tbl AS l INNER JOIN read_csv_auto('$right_input') AS r ON l.id = r.id ORDER BY l.grp, rn\" -i '$input' --parquet -o '$outdir/analytics_sql.parquet'"
   fi
 }
 
