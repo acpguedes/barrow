@@ -6,17 +6,19 @@ usage() {
 Usage: scripts/benchmark.sh [options]
 
 Benchmark common barrow operations against generated datasets.
-The script creates small, medium, and large CSV fixtures automatically and
-measures individual commands plus pipeline variants with explicit cold,
+The script creates deterministic CSV fixtures automatically for the requested
+dataset sizes and measures individual commands plus pipeline variants with explicit cold,
 warmup, and hot phases. It also adds SQL equivalents for the basic operations
-where they make sense and writes detailed machine-readable results plus a final
-summary to the selected workspace.
+where they make sense, records wall time plus resource metrics, and writes
+detailed machine-readable results plus a final summary to the selected workspace.
 
 Options:
   --workspace DIR     Directory for generated data and outputs.
                       Default: .benchmarks
-  --sizes SPEC        Dataset sizes as small:medium:large row counts.
-                      Default: 1000:50000:200000
+  --sizes SPEC        Dataset sizes as either small:medium:large or
+                      tiny:small:medium:large:xlarge row counts.
+                      Default core sizes: 1000:50000:200000
+                      Optional dataset defaults: tiny=100 xlarge=1000000
   --iterations N      Number of runs per enabled phase per benchmark.
                       Default: 3
   --warmup N          Enable warmup when N > 0. The warmup phase uses the
@@ -25,7 +27,8 @@ Options:
                       run count as --iterations. Default: 1
   --barrow-cmd CMD    Command used to invoke barrow.
                       Default: barrow, or 'python -m barrow.cli' if unavailable
-  --datasets LIST     Comma-separated dataset labels to run: small,medium,large
+  --datasets LIST     Comma-separated dataset labels to run:
+                      tiny,small,medium,large,xlarge
                       Default: small,medium,large
   --only LIST         Comma-separated benchmark groups to run.
                       Available: filter,select,mutate,groupby,summary,ungroup,
@@ -113,13 +116,29 @@ if [[ -z "$barrow_cmd" ]]; then
   fi
 fi
 
-if [[ "$sizes_spec" != *:*:* ]]; then
-  echo "--sizes must use small:medium:large" >&2
-  exit 1
-fi
-IFS=':' read -r rows_small rows_medium rows_large <<< "$sizes_spec"
+IFS=':' read -r -a size_parts <<< "$sizes_spec"
+case "${#size_parts[@]}" in
+  3)
+    rows_tiny=100
+    rows_small="${size_parts[0]}"
+    rows_medium="${size_parts[1]}"
+    rows_large="${size_parts[2]}"
+    rows_xlarge=1000000
+    ;;
+  5)
+    rows_tiny="${size_parts[0]}"
+    rows_small="${size_parts[1]}"
+    rows_medium="${size_parts[2]}"
+    rows_large="${size_parts[3]}"
+    rows_xlarge="${size_parts[4]}"
+    ;;
+  *)
+    echo "--sizes must use small:medium:large or tiny:small:medium:large:xlarge" >&2
+    exit 1
+    ;;
+esac
 
-for value in "$iterations" "$warmup" "$cold_runs" "$rows_small" "$rows_medium" "$rows_large"; do
+for value in "$iterations" "$warmup" "$cold_runs" "$rows_tiny" "$rows_small" "$rows_medium" "$rows_large" "$rows_xlarge"; do
   if ! [[ "$value" =~ ^[0-9]+$ ]]; then
     echo "Numeric option expected, got: $value" >&2
     exit 1
@@ -138,7 +157,7 @@ contains_csv_item() {
 }
 
 for dataset in ${datasets//,/ }; do
-  if ! contains_csv_item "$dataset" "small,medium,large"; then
+  if ! contains_csv_item "$dataset" "tiny,small,medium,large,xlarge"; then
     echo "Invalid dataset label: $dataset" >&2
     exit 1
   fi
@@ -160,12 +179,17 @@ summary_file="$workspace/summary.md"
 summary_json="$workspace/summary.json"
 config_file="$workspace/config.txt"
 : > "$results_file"
-printf 'dataset\trows\tbenchmark\tvariant\tphase\trun\tseconds\tcommand\n' >> "$results_file"
+printf 'dataset\trows\tbenchmark\tvariant\tphase\trun\tseconds\tpeak_rss_kb\tcpu_user_s\tcpu_sys_s\texit_code\tcommand\n' >> "$results_file"
 
 cat > "$config_file" <<CONFIG
 workspace=$workspace
 barrow_cmd=$barrow_cmd
 sizes=$sizes_spec
+rows_tiny=$rows_tiny
+rows_small=$rows_small
+rows_medium=$rows_medium
+rows_large=$rows_large
+rows_xlarge=$rows_xlarge
 datasets=$datasets
 only=${only:-all}
 warmup=$warmup
@@ -175,12 +199,12 @@ CONFIG
 
 echo "==> Workspace: $workspace"
 echo "==> Command: $barrow_cmd"
-echo "==> Sizes: small=$rows_small medium=$rows_medium large=$rows_large"
+echo "==> Sizes: tiny=$rows_tiny small=$rows_small medium=$rows_medium large=$rows_large xlarge=$rows_xlarge"
 echo "==> Runs per enabled phase: $iterations"
 echo "==> Enabled phases: cold=$([[ $cold_runs -gt 0 ]] && echo yes || echo no) warmup=$([[ $warmup -gt 0 ]] && echo yes || echo no) hot=yes"
 
 echo "==> Generating fixtures"
-python - <<PY "$workspace" "$rows_small" "$rows_medium" "$rows_large"
+python - <<PY "$workspace" "$rows_tiny" "$rows_small" "$rows_medium" "$rows_large" "$rows_xlarge"
 from __future__ import annotations
 
 import csv
@@ -190,9 +214,11 @@ import sys
 
 workspace = pathlib.Path(sys.argv[1])
 row_counts = {
-    "small": int(sys.argv[2]),
-    "medium": int(sys.argv[3]),
-    "large": int(sys.argv[4]),
+    "tiny": int(sys.argv[2]),
+    "small": int(sys.argv[3]),
+    "medium": int(sys.argv[4]),
+    "large": int(sys.argv[5]),
+    "xlarge": int(sys.argv[6]),
 }
 
 for label, rows in row_counts.items():
@@ -267,11 +293,15 @@ record_timing() {
   local variant="$4"
   local phase="$5"
   local run_id="$6"
-  local command="$7"
-  local elapsed="$8"
+  local elapsed="$7"
+  local peak_rss_kb="$8"
+  local cpu_user_s="$9"
+  local cpu_sys_s="${10}"
+  local exit_code="${11}"
+  local command="${12}"
 
-  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-    "$dataset" "$rows" "$benchmark" "$variant" "$phase" "$run_id" "$elapsed" "$command" >> "$results_file"
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$dataset" "$rows" "$benchmark" "$variant" "$phase" "$run_id" "$elapsed" "$peak_rss_kb" "$cpu_user_s" "$cpu_sys_s" "$exit_code" "$command" >> "$results_file"
 }
 
 measure_phase() {
@@ -284,28 +314,79 @@ measure_phase() {
   local outdir="$7"
   local command="$8"
   local elapsed
+  local peak_rss_kb
+  local cpu_user_s
+  local cpu_sys_s
+  local exit_code
   local run
 
   [[ "$count" -eq 0 ]] && return 0
 
   for ((run = 1; run <= count; run++)); do
     cleanup_outputs "$outdir"
-    elapsed=$(python - <<'PY' "$command"
+    IFS=$'\t' read -r elapsed peak_rss_kb cpu_user_s cpu_sys_s exit_code <<< "$(python - <<'PY' "$command"
 from __future__ import annotations
+import pathlib
+import re
+import resource
 import subprocess
 import sys
+import tempfile
 import time
 
 command = sys.argv[1]
 start = time.perf_counter()
-subprocess.run(["bash", "-lc", command], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+peak_rss_kb = 0
+cpu_user_s = 0.0
+cpu_sys_s = 0.0
+
+time_binary = pathlib.Path("/usr/bin/time")
+if time_binary.exists():
+    with tempfile.NamedTemporaryFile(delete=False) as metrics_file:
+        metrics_path = pathlib.Path(metrics_file.name)
+    try:
+        proc = subprocess.run(
+            [str(time_binary), "-v", "-o", str(metrics_path), "bash", "-lc", command],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        metrics_text = metrics_path.read_text()
+    finally:
+        metrics_path.unlink(missing_ok=True)
+
+    rss_match = re.search(r"Maximum resident set size \\(kbytes\\):\\s*(\\d+)", metrics_text)
+    user_match = re.search(r"User time \\(seconds\\):\\s*([0-9]+(?:\\.[0-9]+)?)", metrics_text)
+    sys_match = re.search(r"System time \\(seconds\\):\\s*([0-9]+(?:\\.[0-9]+)?)", metrics_text)
+    if rss_match:
+        peak_rss_kb = int(rss_match.group(1))
+    if user_match:
+        cpu_user_s = float(user_match.group(1))
+    if sys_match:
+        cpu_sys_s = float(sys_match.group(1))
+else:
+    before = resource.getrusage(resource.RUSAGE_CHILDREN)
+    proc = subprocess.run(
+        ["bash", "-lc", command],
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    after = resource.getrusage(resource.RUSAGE_CHILDREN)
+    peak_rss_kb = int(after.ru_maxrss)
+    cpu_user_s = max(0.0, after.ru_utime - before.ru_utime)
+    cpu_sys_s = max(0.0, after.ru_stime - before.ru_stime)
 end = time.perf_counter()
-print(f"{end - start:.6f}")
+elapsed = end - start
+if proc.returncode != 0:
+    raise subprocess.CalledProcessError(proc.returncode, command)
+print(f"{elapsed:.6f}\t{peak_rss_kb}\t{cpu_user_s:.6f}\t{cpu_sys_s:.6f}\t{proc.returncode}")
 PY
-)
-    record_timing "$dataset" "$rows" "$benchmark" "$variant" "$phase" "$run" "$command" "$elapsed"
-    printf '[%s] rows=%-8s bench=%-10s variant=%-18s phase=%-6s run=%d/%d %ss\n' \
-      "$dataset" "$rows" "$benchmark" "$variant" "$phase" "$run" "$count" "$elapsed"
+)"
+    record_timing "$dataset" "$rows" "$benchmark" "$variant" "$phase" "$run" \
+      "$elapsed" "$peak_rss_kb" "$cpu_user_s" "$cpu_sys_s" "$exit_code" "$command"
+    printf '[%s] rows=%-8s bench=%-10s variant=%-18s phase=%-6s run=%d/%d %ss rss=%skB user=%ss sys=%ss\n' \
+      "$dataset" "$rows" "$benchmark" "$variant" "$phase" "$run" "$count" "$elapsed" "$peak_rss_kb" "$cpu_user_s" "$cpu_sys_s"
   done
 }
 
@@ -431,9 +512,11 @@ benchmark_dataset() {
 
 for dataset in ${datasets//,/ }; do
   case "$dataset" in
+    tiny) benchmark_dataset tiny "$rows_tiny" ;;
     small) benchmark_dataset small "$rows_small" ;;
     medium) benchmark_dataset medium "$rows_medium" ;;
     large) benchmark_dataset large "$rows_large" ;;
+    xlarge) benchmark_dataset xlarge "$rows_xlarge" ;;
   esac
 done
 
@@ -441,8 +524,10 @@ python - <<'PY' "$results_file" "$summary_file" "$summary_json" "$config_file"
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 import math
+import platform
 import pathlib
 import statistics
 import sys
@@ -473,9 +558,9 @@ for line in config_path.read_text().splitlines():
 groups = defaultdict(list)
 for row in rows:
     key = (row["dataset"], row["rows"], row["benchmark"], row["variant"], row["phase"])
-    groups[key].append(float(row["seconds"]))
+    groups[key].append(row)
 
-def stats(values: list[float]) -> dict[str, float | int]:
+def stats(values: list[float], prefix: str) -> dict[str, float | int]:
     values = sorted(values)
     mean = statistics.fmean(values)
     median = statistics.median(values)
@@ -484,24 +569,29 @@ def stats(values: list[float]) -> dict[str, float | int]:
     stdev = statistics.stdev(values) if len(values) > 1 else 0.0
     return {
         "runs": len(values),
-        "avg_seconds": mean,
-        "median_seconds": median,
-        "min_seconds": minimum,
-        "max_seconds": maximum,
-        "stdev_seconds": stdev,
+        f"avg_{prefix}": mean,
+        f"median_{prefix}": median,
+        f"min_{prefix}": minimum,
+        f"max_{prefix}": maximum,
+        f"stdev_{prefix}": stdev,
     }
 
 summary_rows = []
 for key in sorted(groups):
     dataset, nrows, benchmark, variant, phase = key
+    records = groups[key]
     item = {
         "dataset": dataset,
         "rows": int(nrows),
         "benchmark": benchmark,
         "variant": variant,
         "phase": phase,
+        "exit_codes": sorted({int(record["exit_code"]) for record in records}),
     }
-    item.update(stats(groups[key]))
+    item.update(stats([float(record["seconds"]) for record in records], "seconds"))
+    item.update(stats([float(record["peak_rss_kb"]) for record in records], "peak_rss_kb"))
+    item.update(stats([float(record["cpu_user_s"]) for record in records], "cpu_user_s"))
+    item.update(stats([float(record["cpu_sys_s"]) for record in records], "cpu_sys_s"))
     summary_rows.append(item)
 
 hot_by_benchmark = defaultdict(list)
@@ -528,7 +618,50 @@ for key, items in sorted(hot_by_benchmark.items()):
 
 phase_overview = defaultdict(list)
 for item in summary_rows:
-    phase_overview[item["phase"]].append(item["avg_seconds"])
+    phase_overview[item["phase"]].append(item)
+
+def collect_environment_metadata(workspace: pathlib.Path) -> dict[str, object]:
+    metadata: dict[str, object] = {
+        "platform": platform.platform(),
+        "python": platform.python_version(),
+        "machine": platform.machine(),
+        "processor": platform.processor(),
+        "uname": " ".join(platform.uname()),
+    }
+
+    cpuinfo = pathlib.Path("/proc/cpuinfo")
+    if cpuinfo.exists():
+        for line in cpuinfo.read_text().splitlines():
+            if ":" not in line:
+                continue
+            key, value = [part.strip() for part in line.split(":", 1)]
+            if key == "model name":
+                metadata["cpu_model"] = value
+                break
+
+    meminfo = pathlib.Path("/proc/meminfo")
+    if meminfo.exists():
+        for line in meminfo.read_text().splitlines():
+            if line.startswith("MemTotal:"):
+                metadata["mem_total_kb"] = int(line.split()[1])
+                break
+
+    fixture_hashes = []
+    for fixture_path in sorted(workspace.glob("*.csv")):
+        if not fixture_path.is_file():
+            continue
+        digest = hashlib.sha256(fixture_path.read_bytes()).hexdigest()
+        fixture_hashes.append(
+            {
+                "path": fixture_path.name,
+                "bytes": fixture_path.stat().st_size,
+                "sha256": digest,
+            }
+        )
+    metadata["fixtures"] = fixture_hashes
+    return metadata
+
+environment = collect_environment_metadata(pathlib.Path(config["workspace"]))
 
 sql_pairs = []
 for key, items in sorted(hot_by_benchmark.items()):
@@ -557,20 +690,32 @@ lines = []
 lines.append("# Benchmark summary")
 lines.append("")
 lines.append("## Configuration")
-for key in ("workspace", "barrow_cmd", "sizes", "datasets", "only", "cold_runs", "warmup", "iterations"):
+for key in ("workspace", "barrow_cmd", "sizes", "rows_tiny", "rows_small", "rows_medium", "rows_large", "rows_xlarge", "datasets", "only", "cold_runs", "warmup", "iterations"):
     if key in config:
         lines.append(f"- **{key}**: `{config[key]}`")
 lines.append("")
+lines.append("## Environment")
+for key in ("platform", "machine", "cpu_model", "mem_total_kb", "python"):
+    if key in environment:
+        lines.append(f"- **{key}**: `{environment[key]}`")
+if environment.get("fixtures"):
+    lines.append("- **fixtures**:")
+    for fixture in environment["fixtures"]:
+        lines.append(
+            f"  - `{fixture['path']}` ({fixture['bytes']} bytes, sha256 `{fixture['sha256'][:16]}...`)"
+        )
+lines.append("")
 lines.append("## Phase overview")
 for phase in ("cold", "warmup", "hot"):
-    values = phase_overview.get(phase, [])
-    if not values:
+    items = phase_overview.get(phase, [])
+    if not items:
         continue
-    phase_stats = stats(values)
+    phase_stats = stats([item["avg_seconds"] for item in items], "seconds")
+    rss_stats = stats([item["avg_peak_rss_kb"] for item in items], "peak_rss_kb")
     lines.append(
         f"- **{phase}**: {phase_stats['runs']} aggregate rows, avg={phase_stats['avg_seconds']:.6f}s, "
         f"median={phase_stats['median_seconds']:.6f}s, min={phase_stats['min_seconds']:.6f}s, "
-        f"max={phase_stats['max_seconds']:.6f}s"
+        f"max={phase_stats['max_seconds']:.6f}s, avg peak RSS={rss_stats['avg_peak_rss_kb']:.0f}kB"
     )
 lines.append("")
 lines.append("## Hot rankings")
@@ -579,13 +724,14 @@ for key in sorted(hot_by_benchmark):
     lines.append("")
     lines.append(f"### {dataset} / {benchmark} ({rows_count} rows)")
     lines.append("")
-    lines.append("| Rank | Variant | Avg (s) | Median (s) | Min (s) | Max (s) | Stdev (s) |")
-    lines.append("| --- | --- | ---: | ---: | ---: | ---: | ---: |")
+    lines.append("| Rank | Variant | Avg (s) | Median (s) | Min (s) | Max (s) | Stdev (s) | Avg RSS (kB) | Avg user (s) | Avg sys (s) |")
+    lines.append("| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
     ordered = sorted(hot_by_benchmark[key], key=lambda item: item["avg_seconds"])
     for position, item in enumerate(ordered, start=1):
         lines.append(
             f"| {position} | {item['variant']} | {item['avg_seconds']:.6f} | {item['median_seconds']:.6f} | "
-            f"{item['min_seconds']:.6f} | {item['max_seconds']:.6f} | {item['stdev_seconds']:.6f} |"
+            f"{item['min_seconds']:.6f} | {item['max_seconds']:.6f} | {item['stdev_seconds']:.6f} | "
+            f"{item['avg_peak_rss_kb']:.0f} | {item['avg_cpu_user_s']:.6f} | {item['avg_cpu_sys_s']:.6f} |"
         )
 lines.append("")
 lines.append("## SQL vs command comparisons")
@@ -604,18 +750,21 @@ else:
 lines.append("")
 lines.append("## Raw aggregates")
 lines.append("")
-lines.append("| Dataset | Rows | Benchmark | Variant | Phase | Runs | Avg (s) | Median (s) | Min (s) | Max (s) | Stdev (s) |")
-lines.append("| --- | ---: | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |")
+lines.append("| Dataset | Rows | Benchmark | Variant | Phase | Runs | Avg (s) | Median (s) | Min (s) | Max (s) | Stdev (s) | Avg RSS (kB) | Avg user (s) | Avg sys (s) | Exit codes |")
+lines.append("| --- | ---: | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |")
 for item in summary_rows:
     lines.append(
         f"| {item['dataset']} | {item['rows']} | {item['benchmark']} | {item['variant']} | {item['phase']} | {item['runs']} | "
-        f"{item['avg_seconds']:.6f} | {item['median_seconds']:.6f} | {item['min_seconds']:.6f} | {item['max_seconds']:.6f} | {item['stdev_seconds']:.6f} |"
+        f"{item['avg_seconds']:.6f} | {item['median_seconds']:.6f} | {item['min_seconds']:.6f} | {item['max_seconds']:.6f} | {item['stdev_seconds']:.6f} | "
+        f"{item['avg_peak_rss_kb']:.0f} | {item['avg_cpu_user_s']:.6f} | {item['avg_cpu_sys_s']:.6f} | "
+        f"{','.join(str(code) for code in item['exit_codes'])} |"
     )
 summary_path.write_text("\n".join(lines) + "\n")
 summary_json_path.write_text(
     json.dumps(
         {
             "config": config,
+            "environment": environment,
             "summary_rows": summary_rows,
             "rankings": rankings,
             "sql_pairs": sql_pairs,
@@ -637,8 +786,8 @@ PY
 printf '\nDetailed results written to: %s\n' "$results_file"
 
 if [[ "$cleanup" -eq 1 ]]; then
-  rm -rf "$workspace/out" "$workspace/small.csv" "$workspace/medium.csv" "$workspace/large.csv" \
-         "$workspace/small_right.csv" "$workspace/medium_right.csv" "$workspace/large_right.csv"
+  rm -rf "$workspace/out" "$workspace/tiny.csv" "$workspace/small.csv" "$workspace/medium.csv" "$workspace/large.csv" "$workspace/xlarge.csv" \
+         "$workspace/tiny_right.csv" "$workspace/small_right.csv" "$workspace/medium_right.csv" "$workspace/large_right.csv" "$workspace/xlarge_right.csv"
   echo "Generated fixtures and outputs were removed; results and summaries were kept in $workspace"
 else
   echo "Generated fixtures, outputs, and summaries were kept in $workspace for inspection."
