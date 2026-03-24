@@ -1,2 +1,0 @@
-[console_scripts]
-barrow = barrow.cli:main
