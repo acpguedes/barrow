@@ -10,6 +10,34 @@ from ..expr import Expression
 from ._expr_eval import evaluate_expression
 
 
+def _partition_offsets(sorted_table: pa.Table, by: list[str]) -> list[int]:
+    """Return partition boundary offsets using vectorised Arrow compute.
+
+    For each partition column, compare consecutive elements and OR the change
+    masks together.  This avoids converting to Python lists and looping.
+    """
+    n = sorted_table.num_rows
+    if n <= 1:
+        return [0, n]
+
+    # Build a boolean mask where True = new partition starts
+    change_mask: pa.Array | None = None
+    for col_name in by:
+        col = sorted_table[col_name]
+        shifted = col.slice(1)
+        original = col.slice(0, n - 1)
+        diff = pc.not_equal(original, shifted)
+        change_mask = diff if change_mask is None else pc.or_(change_mask, diff)
+
+    offsets = [0]
+    if change_mask is not None:
+        # Extract indices where partitions change
+        indices = pc.indices_nonzero(change_mask).to_pylist()
+        offsets.extend(i + 1 for i in indices)
+    offsets.append(n)
+    return offsets
+
+
 def window(
     table: pa.Table,
     by: list[str] | None,
@@ -54,16 +82,9 @@ def window(
     inv_idx = pa.array(inv_np)
 
     n = sorted_table.num_rows
-    # Determine partition boundaries in the sorted table
+    # Determine partition boundaries using vectorised comparison
     if by:
-        by_lists = [sorted_table[col].to_pylist() for col in by]
-        offsets = [0]
-        for i in range(1, n):
-            prev = tuple(lst[i - 1] for lst in by_lists)
-            cur = tuple(lst[i] for lst in by_lists)
-            if cur != prev:
-                offsets.append(i)
-        offsets.append(n)
+        offsets = _partition_offsets(sorted_table, by)
     else:
         offsets = [0, n]
 

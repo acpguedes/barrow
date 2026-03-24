@@ -6,6 +6,7 @@ import logging
 import pyarrow as pa
 
 from ..expr import Expression
+from ..expr.analyzer import referenced_names
 from ._env import build_env
 from ._expr_eval import evaluate_expression
 
@@ -22,7 +23,10 @@ def mutate(table: pa.Table, **expressions: Expression) -> pa.Table:
     :func:`~barrow.operations._env.build_env`.
     """
     logger.debug("Mutating with expressions: %s", list(expressions.keys()))
-    env = build_env(table)
+    cols: set[str] = set()
+    for expr in expressions.values():
+        cols |= referenced_names(expr)
+    env = build_env(table, columns=cols)
     out = table
     for name, expr in expressions.items():
         logger.debug("Evaluating expression for column '%s'", name)
