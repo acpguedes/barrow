@@ -11,6 +11,7 @@ Usage:
     python3 scripts/analyze_bench.py results.tsv --summary-only
     python3 scripts/analyze_bench.py results.tsv --json-only
 """
+
 from __future__ import annotations
 
 import argparse
@@ -93,7 +94,13 @@ def analyze_distribution(series: pd.Series, name: str = "") -> dict:
 def normality_test(series: pd.Series) -> dict:
     """Shapiro-Wilk normality test."""
     if not HAS_SCIPY:
-        return {"test": "shapiro", "W": None, "p": None, "normal": None, "note": "scipy not installed"}
+        return {
+            "test": "shapiro",
+            "W": None,
+            "p": None,
+            "normal": None,
+            "note": "scipy not installed",
+        }
     if len(series) < 3 or len(series) > 5000:
         return {"test": "shapiro", "W": None, "p": None, "normal": None}
     w, p = sp_stats.shapiro(series)
@@ -103,7 +110,13 @@ def normality_test(series: pd.Series) -> dict:
 def compare_variants(group_a: pd.Series, group_b: pd.Series) -> dict:
     """Mann-Whitney U + Cohen's d between two groups."""
     if not HAS_SCIPY:
-        return {"u_stat": None, "p_value": None, "cohens_d": None, "significant": None, "note": "scipy not installed"}
+        return {
+            "u_stat": None,
+            "p_value": None,
+            "cohens_d": None,
+            "significant": None,
+            "note": "scipy not installed",
+        }
     if len(group_a) < 3 or len(group_b) < 3:
         return {"u_stat": None, "p_value": None, "cohens_d": None, "significant": None}
     u, p = sp_stats.mannwhitneyu(group_a, group_b, alternative="two-sided")
@@ -113,7 +126,9 @@ def compare_variants(group_a: pd.Series, group_b: pd.Series) -> dict:
         "u_stat": round(float(u), 1),
         "p_value": round(float(p), 6),
         "cohens_d": round(float(d), 3),
-        "effect_size": "large" if abs(d) >= 0.8 else "medium" if abs(d) >= 0.5 else "small",
+        "effect_size": (
+            "large" if abs(d) >= 0.8 else "medium" if abs(d) >= 0.5 else "small"
+        ),
         "significant": bool(p < 0.05),
     }
 
@@ -142,7 +157,9 @@ def run_analysis(df: pd.DataFrame, has_resources: bool) -> dict:
 
     cold_mean = cold["seconds"].mean() if len(cold) > 0 else 0
     hot_mean = hot["seconds"].mean() if len(hot) > 0 else 0
-    results["warmup_effect_pct"] = round((cold_mean - hot_mean) / cold_mean * 100, 2) if cold_mean > 0 else 0
+    results["warmup_effect_pct"] = (
+        round((cold_mean - hot_mean) / cold_mean * 100, 2) if cold_mean > 0 else 0
+    )
 
     # 3. Per-benchmark aggregation
     agg = (
@@ -162,23 +179,29 @@ def run_analysis(df: pd.DataFrame, has_resources: bool) -> dict:
         for ds in datasets:
             ds_data = bench_data[bench_data["dataset"] == ds]
             if len(ds_data) > 0:
-                sizes.append({
-                    "dataset": ds,
-                    "mean_s": round(ds_data["seconds"].mean(), 4),
-                    "rows": int(ds_data["rows"].iloc[0]),
-                })
+                sizes.append(
+                    {
+                        "dataset": ds,
+                        "mean_s": round(ds_data["seconds"].mean(), 4),
+                        "rows": int(ds_data["rows"].iloc[0]),
+                    }
+                )
         if len(sizes) >= 2:
             first, last = sizes[0], sizes[-1]
-            factor = round(last["mean_s"] / first["mean_s"], 2) if first["mean_s"] > 0 else 0
-            scaling.append({
-                "benchmark": bench,
-                "smallest": first["dataset"],
-                "smallest_mean": first["mean_s"],
-                "largest": last["dataset"],
-                "largest_mean": last["mean_s"],
-                "factor": factor,
-                "all_sizes": sizes,
-            })
+            factor = (
+                round(last["mean_s"] / first["mean_s"], 2) if first["mean_s"] > 0 else 0
+            )
+            scaling.append(
+                {
+                    "benchmark": bench,
+                    "smallest": first["dataset"],
+                    "smallest_mean": first["mean_s"],
+                    "largest": last["dataset"],
+                    "largest_mean": last["mean_s"],
+                    "factor": factor,
+                    "all_sizes": sizes,
+                }
+            )
     results["scaling"] = sorted(scaling, key=lambda x: x["factor"], reverse=True)
 
     # 5. SQL vs Direct comparisons
@@ -197,20 +220,31 @@ def run_analysis(df: pd.DataFrame, has_resources: bool) -> dict:
             ]["seconds"]
             if len(sql_data) >= 3 and len(dir_data) >= 3:
                 comp = compare_variants(sql_data, dir_data)
-                sql_vs.append({
-                    "dataset": ds,
-                    "benchmark": bench,
-                    "sql_mean": round(float(sql_data.mean()), 4),
-                    "direct_mean": round(float(dir_data.mean()), 4),
-                    "diff_pct": round(float((sql_data.mean() - dir_data.mean()) / dir_data.mean() * 100), 2),
-                    **comp,
-                })
+                sql_vs.append(
+                    {
+                        "dataset": ds,
+                        "benchmark": bench,
+                        "sql_mean": round(float(sql_data.mean()), 4),
+                        "direct_mean": round(float(dir_data.mean()), 4),
+                        "diff_pct": round(
+                            float(
+                                (sql_data.mean() - dir_data.mean())
+                                / dir_data.mean()
+                                * 100
+                            ),
+                            2,
+                        ),
+                        **comp,
+                    }
+                )
     results["sql_vs_direct"] = sql_vs
 
     # 6. Best variant per benchmark+dataset
     if len(agg) > 0:
         best = agg.loc[agg.groupby(["dataset", "benchmark"])["mean"].idxmin()]
-        results["best_variants"] = best[["dataset", "benchmark", "variant", "mean"]].to_dict("records")
+        results["best_variants"] = best[
+            ["dataset", "benchmark", "variant", "mean"]
+        ].to_dict("records")
     else:
         results["best_variants"] = []
 
@@ -240,8 +274,12 @@ def run_analysis(df: pd.DataFrame, has_resources: bool) -> dict:
         cold_bench = cold[cold["benchmark"] == bench]
         cold_m = cold_bench["seconds"].mean() if len(cold_bench) > 0 else hot_m
         penalty = (cold_m - hot_m) / hot_m * 100 if hot_m > 0 else 0
-        cold_penalty.append({"benchmark": bench, "cold_penalty_pct": round(float(penalty), 1)})
-    results["cold_penalty"] = sorted(cold_penalty, key=lambda x: x["cold_penalty_pct"], reverse=True)
+        cold_penalty.append(
+            {"benchmark": bench, "cold_penalty_pct": round(float(penalty), 1)}
+        )
+    results["cold_penalty"] = sorted(
+        cold_penalty, key=lambda x: x["cold_penalty_pct"], reverse=True
+    )
 
     # 10. Floor analysis (minimum overhead proxy)
     floor = []
@@ -250,12 +288,14 @@ def run_analysis(df: pd.DataFrame, has_resources: bool) -> dict:
         if len(subset) > 0:
             min_idx = subset["seconds"].idxmin()
             min_row = subset.loc[min_idx]
-            floor.append({
-                "dataset": ds,
-                "floor_s": round(float(min_row["seconds"]), 4),
-                "benchmark": min_row["benchmark"],
-                "variant": min_row["variant"],
-            })
+            floor.append(
+                {
+                    "dataset": ds,
+                    "floor_s": round(float(min_row["seconds"]), 4),
+                    "benchmark": min_row["benchmark"],
+                    "variant": min_row["variant"],
+                }
+            )
     results["floor_analysis"] = floor
 
     # 11. Resource analysis (if available)
@@ -271,7 +311,11 @@ def _analyze_resources(hot: pd.DataFrame) -> dict:
     res: dict = {}
 
     # Peak RSS by benchmark+dataset
-    if "peak_rss_kb" in hot.columns and hot["peak_rss_kb"].notna().any() and (hot["peak_rss_kb"] > 0).any():
+    if (
+        "peak_rss_kb" in hot.columns
+        and hot["peak_rss_kb"].notna().any()
+        and (hot["peak_rss_kb"] > 0).any()
+    ):
         rss_mb = hot["peak_rss_kb"].dropna() / 1024  # Convert to MB for display
 
         rss_agg = hot.copy()
@@ -297,15 +341,19 @@ def _analyze_resources(hot: pd.DataFrame) -> dict:
             if len(sizes) >= 2:
                 first, last = sizes[0], sizes[-1]
                 if first["rss_mb"] > 0:
-                    mem_scaling.append({
-                        "benchmark": bench,
-                        "smallest": first["dataset"],
-                        "smallest_rss_mb": first["rss_mb"],
-                        "largest": last["dataset"],
-                        "largest_rss_mb": last["rss_mb"],
-                        "factor": round(last["rss_mb"] / first["rss_mb"], 2),
-                    })
-        res["memory_scaling"] = sorted(mem_scaling, key=lambda x: x["factor"], reverse=True)
+                    mem_scaling.append(
+                        {
+                            "benchmark": bench,
+                            "smallest": first["dataset"],
+                            "smallest_rss_mb": first["rss_mb"],
+                            "largest": last["dataset"],
+                            "largest_rss_mb": last["rss_mb"],
+                            "factor": round(last["rss_mb"] / first["rss_mb"], 2),
+                        }
+                    )
+        res["memory_scaling"] = sorted(
+            mem_scaling, key=lambda x: x["factor"], reverse=True
+        )
 
         # Global memory stats (in MB)
         res["rss_global"] = analyze_distribution(rss_mb, "peak_rss_mb")
@@ -314,12 +362,14 @@ def _analyze_resources(hot: pd.DataFrame) -> dict:
     cpu_cols = ["cpu_user_s", "cpu_sys_s"]
     if all(c in hot.columns for c in cpu_cols):
         hot_valid = hot.dropna(subset=cpu_cols).copy()
-        hot_valid = hot_valid[(hot_valid["cpu_user_s"] > 0) | (hot_valid["cpu_sys_s"] > 0)]
+        hot_valid = hot_valid[
+            (hot_valid["cpu_user_s"] > 0) | (hot_valid["cpu_sys_s"] > 0)
+        ]
         if len(hot_valid) > 0:
             hot_valid["cpu_total_s"] = hot_valid["cpu_user_s"] + hot_valid["cpu_sys_s"]
             hot_valid["cpu_efficiency"] = (
-                (hot_valid["cpu_total_s"] / hot_valid["seconds"] * 100).clip(0, 200)
-            )
+                hot_valid["cpu_total_s"] / hot_valid["seconds"] * 100
+            ).clip(0, 200)
 
             res["cpu_efficiency"] = {
                 "mean_pct": round(float(hot_valid["cpu_efficiency"].mean()), 1),
@@ -327,9 +377,11 @@ def _analyze_resources(hot: pd.DataFrame) -> dict:
                 "interpretation": (
                     "CPU-bound"
                     if hot_valid["cpu_efficiency"].median() > 90
-                    else "Mixed I/O + CPU"
-                    if hot_valid["cpu_efficiency"].median() > 50
-                    else "I/O-bound"
+                    else (
+                        "Mixed I/O + CPU"
+                        if hot_valid["cpu_efficiency"].median() > 50
+                        else "I/O-bound"
+                    )
                 ),
             }
 
@@ -348,7 +400,9 @@ def _analyze_resources(hot: pd.DataFrame) -> dict:
             res["cpu_by_benchmark"] = cpu_by_bench.to_dict("records")
 
             # Compute vs I/O split estimate
-            hot_valid["io_wait_estimate_s"] = (hot_valid["seconds"] - hot_valid["cpu_total_s"]).clip(0)
+            hot_valid["io_wait_estimate_s"] = (
+                hot_valid["seconds"] - hot_valid["cpu_total_s"]
+            ).clip(0)
             io_split = (
                 hot_valid.groupby("benchmark")
                 .agg(
@@ -358,7 +412,9 @@ def _analyze_resources(hot: pd.DataFrame) -> dict:
                 )
                 .reset_index()
             )
-            io_split["io_pct"] = (io_split["avg_io_wait"] / io_split["avg_wall"] * 100).round(1)
+            io_split["io_pct"] = (
+                io_split["avg_io_wait"] / io_split["avg_wall"] * 100
+            ).round(1)
             res["io_vs_compute"] = io_split.round(4).to_dict("records")
 
     # Memory efficiency: rows/s per MB
@@ -405,7 +461,9 @@ def generate_summary_md(results: dict, has_resources: bool) -> str:
     lines.append(f"| P5 / P95 | {g['p5']:.4f} / {g['p95']:.4f}s |")
     lines.append(f"| Skewness | {g['skewness']:.2f} |")
     lines.append(f"| Kurtosis | {g['kurtosis']:.2f} |")
-    lines.append(f"| Outliers (IQR) | low={g['outliers_low']}, high={g['outliers_high']} |")
+    lines.append(
+        f"| Outliers (IQR) | low={g['outliers_low']}, high={g['outliers_high']} |"
+    )
     norm = g.get("normality", {})
     if norm.get("W"):
         lines.append(
@@ -415,13 +473,15 @@ def generate_summary_md(results: dict, has_resources: bool) -> str:
     lines.append("")
 
     # Warmup effect
-    lines.append(f"## Warmup Effect: **{results['warmup_effect_pct']}%** reduction cold to hot\n")
+    lines.append(
+        f"## Warmup Effect: **{results['warmup_effect_pct']}%** reduction cold to hot\n"
+    )
 
     # Kruskal-Wallis
     if "kruskal_dataset_size" in results:
         k = results["kruskal_dataset_size"]
         sig_str = "**significant**" if k["significant"] else "not significant"
-        lines.append(f"## Dataset Size Effect")
+        lines.append("## Dataset Size Effect")
         lines.append(f"Kruskal-Wallis: H={k['H']}, p={k['p']} ({sig_str})\n")
 
     # Scaling
@@ -430,7 +490,9 @@ def generate_summary_md(results: dict, has_resources: bool) -> str:
         lines.append("| Benchmark | Smallest (s) | Largest (s) | Factor | Note |")
         lines.append("|-----------|--------------|-------------|--------|------|")
         for s in results["scaling"]:
-            note = "high" if s["factor"] > 2.0 else "good" if s["factor"] < 1.5 else "ok"
+            note = (
+                "high" if s["factor"] > 2.0 else "good" if s["factor"] < 1.5 else "ok"
+            )
             lines.append(
                 f"| {s['benchmark']} | {s['smallest_mean']} ({s['smallest']}) "
                 f"| {s['largest_mean']} ({s['largest']}) | {s['factor']}x | {note} |"
@@ -450,8 +512,12 @@ def generate_summary_md(results: dict, has_resources: bool) -> str:
     # SQL vs Direct
     if results.get("sql_vs_direct"):
         lines.append("## SQL vs Direct\n")
-        lines.append("| Dataset | Benchmark | SQL (s) | Direct (s) | Diff% | p-value | Sig? | Effect |")
-        lines.append("|---------|-----------|---------|------------|-------|---------|------|--------|")
+        lines.append(
+            "| Dataset | Benchmark | SQL (s) | Direct (s) | Diff% | p-value | Sig? | Effect |"
+        )
+        lines.append(
+            "|---------|-----------|---------|------------|-------|---------|------|--------|"
+        )
         for c in sorted(results["sql_vs_direct"], key=lambda x: x["diff_pct"]):
             sig = "Y" if c.get("significant") else "N"
             p_val = c.get("p_value", "N/A")
@@ -468,7 +534,9 @@ def generate_summary_md(results: dict, has_resources: bool) -> str:
         lines.append("| Dataset | Benchmark | Winner | Avg (s) |")
         lines.append("|---------|-----------|--------|---------|")
         for b in results["best_variants"]:
-            lines.append(f"| {b['dataset']} | {b['benchmark']} | **{b['variant']}** | {b['mean']:.4f} |")
+            lines.append(
+                f"| {b['dataset']} | {b['benchmark']} | **{b['variant']}** | {b['mean']:.4f} |"
+            )
         lines.append("")
 
     # Resource analysis
@@ -479,7 +547,9 @@ def generate_summary_md(results: dict, has_resources: bool) -> str:
         if "rss_global" in res and res["rss_global"].get("n", 0) > 0:
             rg = res["rss_global"]
             lines.append("### Memory (Peak RSS)")
-            lines.append(f"- Mean: **{rg['mean']:.1f} MB**, Median: {rg['median']:.1f} MB")
+            lines.append(
+                f"- Mean: **{rg['mean']:.1f} MB**, Median: {rg['median']:.1f} MB"
+            )
             lines.append(f"- Range: {rg['min']:.1f} - {rg['max']:.1f} MB")
             lines.append(f"- P95: {rg['p95']:.1f} MB\n")
 
@@ -504,7 +574,9 @@ def generate_summary_md(results: dict, has_resources: bool) -> str:
             lines.append("### I/O vs Compute Split\n")
             lines.append("| Benchmark | Wall (s) | CPU (s) | I/O Wait (s) | I/O % |")
             lines.append("|-----------|----------|---------|--------------|-------|")
-            for io in sorted(res["io_vs_compute"], key=lambda x: x["io_pct"], reverse=True):
+            for io in sorted(
+                res["io_vs_compute"], key=lambda x: x["io_pct"], reverse=True
+            ):
                 lines.append(
                     f"| {io['benchmark']} | {io['avg_wall']} | {io['avg_cpu']} | "
                     f"{io['avg_io_wait']} | {io['io_pct']}% |"
@@ -517,7 +589,9 @@ def generate_summary_md(results: dict, has_resources: bool) -> str:
         lines.append("| Dataset | Floor (s) | Operation |")
         lines.append("|---------|-----------|----------|")
         for f in results["floor_analysis"]:
-            lines.append(f"| {f['dataset']} | {f['floor_s']}s | {f['benchmark']}/{f['variant']} |")
+            lines.append(
+                f"| {f['dataset']} | {f['floor_s']}s | {f['benchmark']}/{f['variant']} |"
+            )
         lines.append("")
 
     return "\n".join(lines)
@@ -547,8 +621,15 @@ def generate_json(results: dict, path: str) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Barrow benchmark analysis")
     parser.add_argument("results", help="Path to results.tsv")
-    parser.add_argument("--output-dir", "-o", default=None, help="Output directory (default: same as results)")
-    parser.add_argument("--summary-only", action="store_true", help="Only generate markdown summary")
+    parser.add_argument(
+        "--output-dir",
+        "-o",
+        default=None,
+        help="Output directory (default: same as results)",
+    )
+    parser.add_argument(
+        "--summary-only", action="store_true", help="Only generate markdown summary"
+    )
     parser.add_argument("--json-only", action="store_true", help="Only generate JSON")
     args = parser.parse_args()
 
@@ -591,7 +672,9 @@ def main() -> None:
     g = results["global"]
     if g.get("n", 0) > 0:
         print(f"\n{'=' * 60}")
-        print(f"HOT PHASE: mean={g['mean']:.4f}s, median={g['median']:.4f}s, n={g['n']}")
+        print(
+            f"HOT PHASE: mean={g['mean']:.4f}s, median={g['median']:.4f}s, n={g['n']}"
+        )
         print(f"Distribution: skew={g['skewness']:.2f}, kurt={g['kurtosis']:.2f}")
         print(f"Warmup effect: {results['warmup_effect_pct']}%")
         if "kruskal_dataset_size" in results:
@@ -600,9 +683,13 @@ def main() -> None:
         if has_resources and "resources" in results:
             res = results["resources"]
             if "rss_global" in res and res["rss_global"].get("n", 0) > 0:
-                print(f"Peak RSS: mean={res['rss_global']['mean']:.1f}MB, max={res['rss_global']['max']:.1f}MB")
+                print(
+                    f"Peak RSS: mean={res['rss_global']['mean']:.1f}MB, max={res['rss_global']['max']:.1f}MB"
+                )
             if "cpu_efficiency" in res:
-                print(f"CPU efficiency: {res['cpu_efficiency']['mean_pct']}% ({res['cpu_efficiency']['interpretation']})")
+                print(
+                    f"CPU efficiency: {res['cpu_efficiency']['mean_pct']}% ({res['cpu_efficiency']['interpretation']})"
+                )
         print(f"{'=' * 60}")
 
 

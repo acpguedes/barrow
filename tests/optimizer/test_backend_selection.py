@@ -2,8 +2,6 @@
 
 from barrow.core.nodes import (
     Aggregate,
-    Filter,
-    LogicalNode,
     Project,
     Scan,
     Sink,
