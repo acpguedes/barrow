@@ -1,0 +1,2622 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../manual/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Architecture - Barrow</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#architecture" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Barrow" class="md-header__button md-logo" aria-label="Barrow" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Barrow
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Architecture
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Barrow" class="md-nav__button md-logo" aria-label="Barrow" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Barrow
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../manual/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manual
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Purpose
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#product-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Product goals
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Product goals">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#primary-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Primary goals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-goals
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architectural-principles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architectural principles
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current-state-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current-state summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#target-architecture-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Target architecture overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#layer-by-layer-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer-by-layer design
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Layer-by-layer design">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-frontends" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Frontends
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Frontends">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cli-frontend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CLI frontend
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sql-frontend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQL frontend
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#python-api-frontend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Python API frontend
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-frontend-adapters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Frontend adapters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-core-logical-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Core logical layer
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Core logical layer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#core-entities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core entities
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#canonical-logical-nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Canonical logical nodes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-this-layer-matters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why this layer matters
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-expression-subsystem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Expression subsystem
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Expression subsystem">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#design-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design goals
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-optimizer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Optimizer
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Optimizer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#required-rule-families" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Required rule families
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Required rule families">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#projection-pushdown" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Projection pushdown
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#filter-pushdown" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filter pushdown
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#operator-fusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operator fusion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logical-simplification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Logical simplification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#backend-selection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backend selection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#materialization-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Materialization policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-execution-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Execution engine
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Execution engine">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#responsibilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Responsibilities
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recommended-abstraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommended abstraction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#executionresult-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ExecutionResult contract
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-backend-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Backend layer
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Backend layer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arrow-backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Arrow backend
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#duckdb-backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DuckDB backend
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hybrid-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hybrid execution
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-io-adapters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. I/O adapters
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. I/O adapters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#responsibilities_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Responsibilities
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#suggested-package-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Suggested package structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#future-extension-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Future extension points
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-and-metadata-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data and metadata model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data and metadata model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#current-limitation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current limitation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#target-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Target model
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#performance-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance strategy
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Performance strategy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-lazy-planning-by-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Lazy planning by default
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-batch-aware-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Batch-aware execution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-column-pruning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Column pruning
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-backend-aware-optimization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Backend-aware optimization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-stable-interchange-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Stable interchange format
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error-handling-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error-handling model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#observability-and-explainability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Observability and explainability
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-strategy-for-the-target-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing strategy for the target architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Testing strategy for the target architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#unit-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unit tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#integration-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#golden-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Golden tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compatibility-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compatibility tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#suggested-target-package-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Suggested target package layout
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migration-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migration plan
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Migration plan">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-stabilize-contracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1: stabilize contracts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-introduce-logical-planning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: introduce logical planning
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-add-optimization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: add optimization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-expose-new-frontends" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4: expose new frontends
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-5-advanced-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 5: advanced execution
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommended-immediate-next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommended immediate next steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#final-recommendation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Final recommendation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-1-implementation-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1 implementation status
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 1 implementation status">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#completed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Completed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#next-steps-phase-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next steps (Phase 2)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Purpose
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#product-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Product goals
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Product goals">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#primary-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Primary goals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-goals
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architectural-principles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architectural principles
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current-state-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current-state summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#target-architecture-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Target architecture overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#layer-by-layer-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer-by-layer design
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Layer-by-layer design">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-frontends" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Frontends
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Frontends">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cli-frontend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CLI frontend
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sql-frontend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQL frontend
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#python-api-frontend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Python API frontend
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-frontend-adapters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Frontend adapters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-core-logical-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Core logical layer
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Core logical layer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#core-entities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core entities
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#canonical-logical-nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Canonical logical nodes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-this-layer-matters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why this layer matters
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-expression-subsystem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Expression subsystem
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Expression subsystem">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#design-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design goals
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-optimizer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Optimizer
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Optimizer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#required-rule-families" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Required rule families
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Required rule families">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#projection-pushdown" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Projection pushdown
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#filter-pushdown" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filter pushdown
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#operator-fusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operator fusion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logical-simplification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Logical simplification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#backend-selection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backend selection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#materialization-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Materialization policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-execution-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Execution engine
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Execution engine">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#responsibilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Responsibilities
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recommended-abstraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommended abstraction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#executionresult-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ExecutionResult contract
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-backend-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Backend layer
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Backend layer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arrow-backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Arrow backend
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#duckdb-backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DuckDB backend
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hybrid-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hybrid execution
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-io-adapters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. I/O adapters
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. I/O adapters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#responsibilities_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Responsibilities
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#suggested-package-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Suggested package structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#future-extension-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Future extension points
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-and-metadata-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data and metadata model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data and metadata model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#current-limitation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current limitation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#target-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Target model
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#performance-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance strategy
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Performance strategy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-lazy-planning-by-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Lazy planning by default
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-batch-aware-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Batch-aware execution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-column-pruning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Column pruning
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-backend-aware-optimization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Backend-aware optimization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-stable-interchange-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Stable interchange format
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error-handling-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error-handling model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#observability-and-explainability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Observability and explainability
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-strategy-for-the-target-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing strategy for the target architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Testing strategy for the target architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#unit-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unit tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#integration-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#golden-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Golden tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compatibility-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compatibility tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#suggested-target-package-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Suggested target package layout
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migration-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migration plan
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Migration plan">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-stabilize-contracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1: stabilize contracts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-introduce-logical-planning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: introduce logical planning
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-add-optimization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: add optimization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-expose-new-frontends" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4: expose new frontends
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-5-advanced-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 5: advanced execution
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommended-immediate-next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommended immediate next steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#final-recommendation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Final recommendation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-1-implementation-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1 implementation status
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 1 implementation status">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#completed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Completed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#next-steps-phase-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next steps (Phase 2)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="architecture">Architecture</h1>
+<h2 id="purpose">Purpose</h2>
+<p><code>barrow</code> is evolving from a collection of Arrow-powered CLI subcommands into a compact analytical engine for tabular pipelines. The final architecture should preserve the current Unix-style ergonomics while adding a single execution model that can support CLI commands, SQL, future Python APIs, and optimized execution across multiple backends.</p>
+<p>This document defines the target architecture for that final optimized version.</p>
+<h2 id="product-goals">Product goals</h2>
+<h3 id="primary-goals">Primary goals</h3>
+<ul>
+<li>Keep the CLI fast, scriptable, and composable with <code>STDIN</code>/<code>STDOUT</code>.</li>
+<li>Support a unified transformation model across CSV, Parquet, Feather, and ORC.</li>
+<li>Expose the same engine through multiple frontends: CLI first, SQL next, Python API later.</li>
+<li>Optimize common pipelines through planning instead of executing each command eagerly.</li>
+<li>Use Apache Arrow as the in-memory interoperability layer.</li>
+<li>Use DuckDB selectively for SQL, complex joins, sorting, and advanced window execution.</li>
+</ul>
+<h3 id="non-goals">Non-goals</h3>
+<ul>
+<li>Building a distributed query engine.</li>
+<li>Replacing general-purpose data warehouses.</li>
+<li>Supporting arbitrary Python execution inside user expressions.</li>
+</ul>
+<h2 id="architectural-principles">Architectural principles</h2>
+<ol>
+<li><strong>One engine, many frontends.</strong> CLI, SQL, and future APIs must compile into the same logical plan.</li>
+<li><strong>Lazy internally, explicit externally.</strong> Users keep the current CLI experience, but execution is deferred until the engine has a full plan to optimize.</li>
+<li><strong>Arrow-native contracts.</strong> Arrow remains the canonical in-memory table format between layers.</li>
+<li><strong>Backend polymorphism.</strong> The planner chooses the best execution backend for each plan or plan fragment.</li>
+<li><strong>Metadata is logical state, not transport state.</strong> Grouping, ordering, and partition semantics should live in the logical plan rather than only in schema metadata.</li>
+<li><strong>Format adapters are isolated.</strong> File-format detection, scan behavior, schema inference, and sink writing must remain outside core planning logic.</li>
+</ol>
+<h2 id="current-state-summary">Current-state summary</h2>
+<p>The current codebase already has the right seeds for the target design:</p>
+<ul>
+<li>A thin CLI layer with subcommands for <code>filter</code>, <code>select</code>, <code>mutate</code>, <code>groupby</code>, <code>summary</code>, <code>ungroup</code>, <code>join</code>, and <code>view</code>.</li>
+<li>A separate <code>operations</code> package that contains transformation primitives.</li>
+<li><code>io.reader</code> and <code>io.writer</code> helpers that detect and serialize Arrow-compatible formats.</li>
+<li>An expression parser/evaluator used by row filtering and column mutation.</li>
+<li>Early support for <code>window</code> and <code>sql</code> operations in the operations layer, even though they are not yet fully surfaced as first-class CLI frontends.</li>
+</ul>
+<p>The final architecture formalizes and generalizes this structure.</p>
+<h2 id="target-architecture-overview">Target architecture overview</h2>
+<pre><code class="language-text">+-----------------------------+
+| Frontends                   |
+| CLI | SQL | Python API      |
++-------------+---------------+
+              |
+              v
++-----------------------------+
+| Frontend Adapters           |
+| cli_to_plan | sql_to_plan   |
+| api_to_plan                 |
++-------------+---------------+
+              |
+              v
++-----------------------------+
+| Core Logical Layer          |
+| LogicalPlan | Expr AST      |
+| Schema | LogicalProperties  |
++-------------+---------------+
+              |
+              v
++-----------------------------+
+| Optimizer                   |
+| pushdown | fusion |         |
+| simplification | backend    |
++-------------+---------------+
+              |
+              v
++-----------------------------+
+| Execution Engine            |
+| planner | scheduler |       |
+| materialization policy      |
++------+------+---------------+
+       |      |
+       v      v
++----------+  +---------------+
+| Arrow    |  | DuckDB        |
+| backend  |  | backend       |
++----------+  +---------------+
+       \         /
+        \       /
+         v     v
+      +-----------------------+
+      | I/O Adapters          |
+      | CSV | Parquet |       |
+      | Feather | ORC         |
+      +-----------------------+
+</code></pre>
+<h2 id="layer-by-layer-design">Layer-by-layer design</h2>
+<h3 id="1-frontends">1. Frontends</h3>
+<p>Frontends are responsible only for turning user input into a common internal representation.</p>
+<h4 id="cli-frontend">CLI frontend</h4>
+<p>The CLI remains the flagship interface, but it stops executing operations directly. Instead, each subcommand builds a logical operator and appends it to a plan.</p>
+<p>Planned CLI capabilities:</p>
+<ul>
+<li>Existing commands: <code>filter</code>, <code>select</code>, <code>mutate</code>, <code>groupby</code>, <code>summary</code>, <code>ungroup</code>, <code>join</code>, <code>view</code></li>
+<li>New first-class commands: <code>sql</code>, <code>window</code>, <code>sort</code>, <code>limit</code>, <code>explain</code></li>
+<li>Shared I/O options with consistent semantics</li>
+<li>Pipeline awareness so chained commands can become one optimized logical graph</li>
+</ul>
+<h4 id="sql-frontend">SQL frontend</h4>
+<p>SQL should become a first-class input mode, not just a direct DuckDB call. The preferred design is:</p>
+<ul>
+<li>Parse SQL into a logical plan when possible.</li>
+<li>Fall back to a DuckDB-backed physical plan for unsupported cases.</li>
+<li>Preserve output contracts with the rest of the engine.</li>
+</ul>
+<h4 id="python-api-frontend">Python API frontend</h4>
+<p>A future Python API should expose fluent lazy operations such as:</p>
+<pre><code class="language-python">(
+    barrow.scan(&quot;data.parquet&quot;)
+    .filter(&quot;a &gt; 1&quot;)
+    .mutate(&quot;c=a+b&quot;)
+    .groupby([&quot;grp&quot;])
+    .summary({&quot;c&quot;: &quot;sum&quot;})
+    .collect()
+)
+</code></pre>
+<p>The API should be syntactic sugar over the same logical-plan primitives used by the CLI.</p>
+<h3 id="2-frontend-adapters">2. Frontend adapters</h3>
+<p>This layer translates frontend-specific constructs into the core logical model.</p>
+<p>Suggested modules:</p>
+<ul>
+<li><code>frontend/cli_to_plan.py</code></li>
+<li><code>frontend/sql_to_plan.py</code></li>
+<li><code>frontend/python_api.py</code></li>
+</ul>
+<p>Responsibilities:</p>
+<ul>
+<li>Normalize names, aliases, and option defaults.</li>
+<li>Validate command-specific syntax.</li>
+<li>Produce core <code>LogicalPlan</code> nodes.</li>
+<li>Avoid data access and execution decisions.</li>
+</ul>
+<h3 id="3-core-logical-layer">3. Core logical layer</h3>
+<p>This is the heart of the target architecture.</p>
+<h4 id="core-entities">Core entities</h4>
+<ul>
+<li><code>LogicalPlan</code>: immutable tree or DAG representing the requested transformations.</li>
+<li><code>LogicalNode</code>: base type for all plan nodes.</li>
+<li><code>Schema</code>: columns, dtypes, nullability, and optional source lineage.</li>
+<li><code>LogicalProperties</code>: grouping, ordering, partitioning, row-count estimates, and format hints.</li>
+<li><code>Expression AST</code>: typed internal representation for user expressions.</li>
+</ul>
+<h4 id="canonical-logical-nodes">Canonical logical nodes</h4>
+<ul>
+<li><code>Scan</code></li>
+<li><code>Project</code></li>
+<li><code>Filter</code></li>
+<li><code>Mutate</code></li>
+<li><code>Aggregate</code></li>
+<li><code>Join</code></li>
+<li><code>Window</code></li>
+<li><code>Sort</code></li>
+<li><code>Limit</code></li>
+<li><code>Ungroup</code></li>
+<li><code>View</code></li>
+<li><code>Sink</code></li>
+</ul>
+<h4 id="why-this-layer-matters">Why this layer matters</h4>
+<p>Today, grouping is represented through schema metadata when tables are written and read back. In the target architecture, grouping becomes a logical property of the plan. That allows the optimizer and execution engine to reason about semantics without depending on transport-specific metadata.</p>
+<h3 id="4-expression-subsystem">4. Expression subsystem</h3>
+<p>The current parser is a good start, but the final system should split expression handling into three steps:</p>
+<ol>
+<li><strong>Parse</strong> user text into an AST.</li>
+<li><strong>Analyze</strong> names, function usage, and types.</li>
+<li><strong>Compile</strong> expressions into backend-specific execution forms.</li>
+</ol>
+<h4 id="design-goals">Design goals</h4>
+<ul>
+<li>Keep the current approachable expression syntax.</li>
+<li>Support column references, arithmetic, comparisons, boolean logic, and a curated function set.</li>
+<li>Compile simple expressions to Arrow compute kernels when possible.</li>
+<li>Compile advanced expressions to DuckDB SQL when beneficial.</li>
+<li>Produce stable, user-friendly diagnostics.</li>
+</ul>
+<p>Suggested modules:</p>
+<ul>
+<li><code>expr/parser.py</code></li>
+<li><code>expr/analyzer.py</code></li>
+<li><code>expr/compiler_arrow.py</code></li>
+<li><code>expr/compiler_duckdb.py</code></li>
+<li><code>expr/types.py</code></li>
+</ul>
+<h3 id="5-optimizer">5. Optimizer</h3>
+<p>The optimizer is the main performance lever in the final version.</p>
+<h4 id="required-rule-families">Required rule families</h4>
+<h5 id="projection-pushdown">Projection pushdown</h5>
+<p>Read only the columns needed downstream, especially for Parquet and ORC scans.</p>
+<h5 id="filter-pushdown">Filter pushdown</h5>
+<p>Push predicates into scans and backend-native query execution whenever possible.</p>
+<h5 id="operator-fusion">Operator fusion</h5>
+<p>Collapse adjacent transforms such as:</p>
+<ul>
+<li><code>select</code> + <code>mutate</code></li>
+<li>multiple <code>mutate</code> expressions</li>
+<li>redundant projections</li>
+<li>unnecessary materializations</li>
+</ul>
+<h5 id="logical-simplification">Logical simplification</h5>
+<p>Remove no-op or redundant nodes such as:</p>
+<ul>
+<li><code>ungroup</code> on ungrouped data</li>
+<li>repeated sorts on identical keys</li>
+<li><code>select</code> that preserves all columns in order</li>
+</ul>
+<h5 id="backend-selection">Backend selection</h5>
+<p>Choose the right physical backend per plan or plan fragment.</p>
+<p>Examples:</p>
+<ul>
+<li>Arrow backend for vectorized projection/filter/mutate</li>
+<li>DuckDB backend for heavy joins, SQL, sort-heavy plans, and complex window logic</li>
+</ul>
+<h5 id="materialization-policy">Materialization policy</h5>
+<p>Decide when to keep data lazy, when to stream batches, and when to materialize full tables.</p>
+<h3 id="6-execution-engine">6. Execution engine</h3>
+<p>The execution engine transforms optimized logical plans into executable physical plans.</p>
+<h4 id="responsibilities">Responsibilities</h4>
+<ul>
+<li>Build physical operators from logical nodes.</li>
+<li>Pick backends and split the plan into backend-compatible fragments.</li>
+<li>Manage intermediate representation boundaries.</li>
+<li>Guarantee stable output contracts such as <code>pa.Table</code> or a standardized <code>ExecutionResult</code>.</li>
+</ul>
+<h4 id="recommended-abstraction">Recommended abstraction</h4>
+<pre><code class="language-text">LogicalPlan -&gt; OptimizedPlan -&gt; PhysicalPlan -&gt; ExecutionResult
+</code></pre>
+<h4 id="executionresult-contract">ExecutionResult contract</h4>
+<p>Use a normalized result wrapper with helpers such as:</p>
+<ul>
+<li><code>to_table()</code></li>
+<li><code>to_batches()</code></li>
+<li><code>write_to_sink()</code></li>
+<li><code>schema</code></li>
+<li><code>stats</code></li>
+</ul>
+<p>This prevents backend-specific return types from leaking into tests and callers.</p>
+<h3 id="7-backend-layer">7. Backend layer</h3>
+<h4 id="arrow-backend">Arrow backend</h4>
+<p>Use Arrow-native execution for:</p>
+<ul>
+<li>scans and sinks</li>
+<li><code>select</code></li>
+<li><code>filter</code></li>
+<li><code>mutate</code></li>
+<li>simple aggregations</li>
+<li>lightweight transformations on in-memory tables</li>
+</ul>
+<p>Advantages:</p>
+<ul>
+<li>tight integration with current code</li>
+<li>minimal overhead</li>
+<li>predictable vectorized execution</li>
+</ul>
+<h4 id="duckdb-backend">DuckDB backend</h4>
+<p>Use DuckDB for:</p>
+<ul>
+<li>SQL frontends and SQL fallbacks</li>
+<li>large joins</li>
+<li>ordering and sorting</li>
+<li>advanced window functions</li>
+<li>plans where relational optimization is materially better than custom execution</li>
+</ul>
+<h4 id="hybrid-execution">Hybrid execution</h4>
+<p>In the final optimized version, the planner should be allowed to run a plan partly in Arrow and partly in DuckDB, with Arrow Tables as the interchange contract.</p>
+<h3 id="8-io-adapters">8. I/O adapters</h3>
+<p>I/O should remain isolated from planning and transformation logic.</p>
+<h4 id="responsibilities_1">Responsibilities</h4>
+<ul>
+<li>format detection</li>
+<li>schema inference</li>
+<li>scan options</li>
+<li>sink configuration</li>
+<li>transport details for files, pipes, and future remote storage</li>
+</ul>
+<h4 id="suggested-package-structure">Suggested package structure</h4>
+<pre><code class="language-text">io/
+  scan/
+    csv.py
+    parquet.py
+    feather.py
+    orc.py
+  sink/
+    csv.py
+    parquet.py
+    feather.py
+    orc.py
+  formats.py
+  options.py
+</code></pre>
+<h4 id="future-extension-points">Future extension points</h4>
+<ul>
+<li>Arrow IPC streams for process-to-process transfer</li>
+<li>directory-based dataset scans</li>
+<li>remote object storage adapters</li>
+<li>partition discovery</li>
+</ul>
+<h2 id="data-and-metadata-model">Data and metadata model</h2>
+<h3 id="current-limitation">Current limitation</h3>
+<p>Grouping metadata is currently embedded in schema metadata when transporting grouped tables through CSV or Arrow formats.</p>
+<h3 id="target-model">Target model</h3>
+<p>Promote execution semantics into a dedicated logical-properties model.</p>
+<p>Suggested logical properties:</p>
+<ul>
+<li><code>group_keys</code></li>
+<li><code>ordering</code></li>
+<li><code>partitions</code></li>
+<li><code>source_format</code></li>
+<li><code>estimated_rows</code></li>
+<li><code>estimated_size_bytes</code></li>
+<li><code>is_materialized</code></li>
+</ul>
+<p>Transport metadata may still exist for interoperability, but it should never be the only source of truth for plan semantics.</p>
+<h2 id="performance-strategy">Performance strategy</h2>
+<h3 id="1-lazy-planning-by-default">1. Lazy planning by default</h3>
+<p>Even when invoked from a CLI pipeline, <code>barrow</code> should attempt to build a larger logical plan before executing.</p>
+<h3 id="2-batch-aware-execution">2. Batch-aware execution</h3>
+<p>Support chunked processing for operations that do not require full materialization.</p>
+<p>Good streaming candidates:</p>
+<ul>
+<li><code>select</code></li>
+<li><code>filter</code></li>
+<li>some <code>mutate</code> operations</li>
+<li>format conversion</li>
+</ul>
+<p>Materialization-required operators:</p>
+<ul>
+<li>global sort</li>
+<li>many joins</li>
+<li>many window functions</li>
+<li>some grouped aggregations depending on backend strategy</li>
+</ul>
+<h3 id="3-column-pruning">3. Column pruning</h3>
+<p>Apply column pruning as early as possible to reduce memory pressure and I/O cost.</p>
+<h3 id="4-backend-aware-optimization">4. Backend-aware optimization</h3>
+<p>Let the optimizer treat backend capabilities as part of the planning problem.</p>
+<h3 id="5-stable-interchange-format">5. Stable interchange format</h3>
+<p>Use Arrow Tables or Arrow RecordBatches as the normalized interchange representation between fragments.</p>
+<h2 id="error-handling-model">Error-handling model</h2>
+<p>The final architecture should use typed error domains:</p>
+<ul>
+<li><code>FrontendError</code></li>
+<li><code>ExpressionError</code></li>
+<li><code>PlanningError</code></li>
+<li><code>OptimizationError</code></li>
+<li><code>ExecutionError</code></li>
+<li><code>IOError</code></li>
+</ul>
+<p>Benefits:</p>
+<ul>
+<li>clearer diagnostics</li>
+<li>better testability</li>
+<li>easier CLI messaging</li>
+<li>easier API integration</li>
+</ul>
+<h2 id="observability-and-explainability">Observability and explainability</h2>
+<p>To make the engine debuggable and trustworthy, add:</p>
+<ul>
+<li><code>barrow explain ...</code> to print logical and physical plans</li>
+<li>execution stats per operator</li>
+<li>backend choice annotations</li>
+<li>optional timing and row-count output</li>
+<li>debug logging hooks around optimization decisions</li>
+</ul>
+<h2 id="testing-strategy-for-the-target-architecture">Testing strategy for the target architecture</h2>
+<h3 id="unit-tests">Unit tests</h3>
+<ul>
+<li>expression parsing and semantic analysis</li>
+<li>optimizer rule behavior</li>
+<li>backend adapters</li>
+<li>logical-plan validation</li>
+</ul>
+<h3 id="integration-tests">Integration tests</h3>
+<ul>
+<li>end-to-end CLI pipelines</li>
+<li>mixed-format pipelines</li>
+<li>SQL and window workflows</li>
+<li>cross-backend equivalence</li>
+</ul>
+<h3 id="golden-tests">Golden tests</h3>
+<ul>
+<li>plan rendering for <code>explain</code></li>
+<li>stable error messages</li>
+<li>documentation examples</li>
+</ul>
+<h3 id="compatibility-tests">Compatibility tests</h3>
+<ul>
+<li>verify backend return types normalize correctly</li>
+<li>verify Arrow/DuckDB version differences do not leak into public behavior</li>
+</ul>
+<h2 id="suggested-target-package-layout">Suggested target package layout</h2>
+<pre><code class="language-text">barrow/
+  cli/
+    main.py
+    commands/
+      filter.py
+      select.py
+      mutate.py
+      groupby.py
+      summary.py
+      join.py
+      window.py
+      sql.py
+      view.py
+      explain.py
+  frontend/
+    cli_to_plan.py
+    sql_to_plan.py
+    python_api.py
+  core/
+    plan.py
+    nodes.py
+    schema.py
+    properties.py
+    result.py
+    errors.py
+  optimizer/
+    optimizer.py
+    rules/
+      projection_pushdown.py
+      filter_pushdown.py
+      fusion.py
+      simplify.py
+      backend_selection.py
+  execution/
+    engine.py
+    physical_plan.py
+    backends/
+      arrow_backend.py
+      duckdb_backend.py
+      streaming_backend.py
+  expr/
+    parser.py
+    analyzer.py
+    compiler_arrow.py
+    compiler_duckdb.py
+    types.py
+  io/
+    scan/
+      csv.py
+      parquet.py
+      feather.py
+      orc.py
+    sink/
+      csv.py
+      parquet.py
+      feather.py
+      orc.py
+    formats.py
+    options.py
+</code></pre>
+<h2 id="migration-plan">Migration plan</h2>
+<h3 id="phase-1-stabilize-contracts">Phase 1: stabilize contracts</h3>
+<ul>
+<li>Introduce <code>ExecutionResult</code>.</li>
+<li>Normalize SQL backend return types.</li>
+<li>Separate frontend parsing from execution entrypoints.</li>
+<li>Add architecture tests around result contracts.</li>
+</ul>
+<h3 id="phase-2-introduce-logical-planning">Phase 2: introduce logical planning</h3>
+<ul>
+<li>Create <code>LogicalPlan</code> and initial nodes.</li>
+<li>Convert CLI commands to plan builders.</li>
+<li>Keep current eager execution behind the engine as an interim implementation.</li>
+</ul>
+<h3 id="phase-3-add-optimization">Phase 3: add optimization</h3>
+<ul>
+<li>Implement projection pushdown.</li>
+<li>Implement filter pushdown.</li>
+<li>Add operator fusion.</li>
+<li>Add backend selection rules.</li>
+</ul>
+<h3 id="phase-4-expose-new-frontends">Phase 4: expose new frontends</h3>
+<ul>
+<li>Add <code>sql</code> CLI command backed by the common engine.</li>
+<li>Add <code>window</code> CLI command through the planner.</li>
+<li>Add <code>explain</code> command.</li>
+<li>Add optional Python API.</li>
+</ul>
+<h3 id="phase-5-advanced-execution">Phase 5: advanced execution</h3>
+<ul>
+<li>Add chunked execution where possible.</li>
+<li>Add dataset scans and partition-aware reads.</li>
+<li>Add richer observability and plan stats.</li>
+</ul>
+<h2 id="recommended-immediate-next-steps">Recommended immediate next steps</h2>
+<ol>
+<li>Create a <code>core.result.ExecutionResult</code> abstraction.</li>
+<li>Refactor the CLI so subcommands build plan objects instead of directly reading, executing, and writing.</li>
+<li>Move grouping semantics from implicit schema metadata to explicit logical properties.</li>
+<li>Introduce a minimal optimizer with projection and filter pushdown.</li>
+<li>Add a backend selection layer that chooses Arrow or DuckDB.</li>
+<li>Expose <code>sql</code> and <code>window</code> only after they run through the same execution contract as the rest of the engine.</li>
+</ol>
+<h2 id="final-recommendation">Final recommendation</h2>
+<p>The ideal final version of <code>barrow</code> is not just a collection of CLI subcommands. It is a lightweight analytical engine with:</p>
+<ul>
+<li>one logical model,</li>
+<li>one optimization pipeline,</li>
+<li>multiple frontends,</li>
+<li>multiple execution backends,</li>
+<li>and Arrow as the interoperability spine.</li>
+</ul>
+<p>That architecture keeps the current usability of the project while giving it a credible path toward better performance, cleaner extensibility, and a more coherent product surface.</p>
+<h2 id="phase-1-implementation-status">Phase 1 implementation status</h2>
+<p>The following components from the target architecture have been implemented:</p>
+<h3 id="completed">Completed</h3>
+<ul>
+<li>Core logical layer: <code>LogicalNode</code>, <code>LogicalPlan</code>, <code>ExecutionResult</code>, <code>LogicalProperties</code></li>
+<li>Optimizer with rules: simplify, fusion, filter pushdown, projection pushdown, backend selection</li>
+<li>Execution engine with Arrow and DuckDB backends</li>
+<li>Frontend adapters: <code>cli_to_plan</code>, <code>sql_to_plan</code></li>
+<li>I/O adapters: per-format scan and sink modules</li>
+<li>Expression enhancements: <code>analyzer.py</code>, <code>compiler.py</code></li>
+<li>New CLI commands: <code>sort</code>, <code>sql</code>, <code>window</code>, <code>explain</code></li>
+<li>Typed error hierarchy in <code>barrow.core.errors</code></li>
+<li>All existing CLI commands rewired through the plan-based pipeline</li>
+</ul>
+<h3 id="next-steps-phase-2">Next steps (Phase 2)</h3>
+<ul>
+<li>Active projection/filter pushdown in scans</li>
+<li>Lazy execution mode</li>
+<li>Backend selection based on cost estimation</li>
+<li>Chunked/streaming execution for stateless operations</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
