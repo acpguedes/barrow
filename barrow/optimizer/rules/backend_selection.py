@@ -92,7 +92,7 @@ def _window_to_sql(node: Window) -> str | None:
     for name, expr in node.assignments.items():
         sql_expr = to_sql(expr)
         # Wrap the expression with the OVER clause
-        projections.append(f"{sql_expr} OVER ({window_clause}) AS \"{name}\"")
+        projections.append(f'{sql_expr} OVER ({window_clause}) AS "{name}"')
 
     if not projections:
         return None

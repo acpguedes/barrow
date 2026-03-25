@@ -119,8 +119,7 @@ def build_env(
 
     # Default: convert all columns eagerly (original behaviour).
     data = {
-        name: table[name].to_numpy(zero_copy_only=False)
-        for name in table.column_names
+        name: table[name].to_numpy(zero_copy_only=False) for name in table.column_names
     }
     return _NumpyFallbackDict(data)
 
