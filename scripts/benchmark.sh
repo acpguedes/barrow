@@ -179,7 +179,7 @@ summary_file="$workspace/summary.md"
 summary_json="$workspace/summary.json"
 config_file="$workspace/config.txt"
 : > "$results_file"
-printf 'dataset\trows\tbenchmark\tvariant\tphase\trun\tseconds\tpeak_rss_kb\tcpu_user_s\tcpu_sys_s\texit_code\tcommand\n' >> "$results_file"
+printf 'dataset\trows\tbenchmark\tvariant\tphase\trun\tseconds\tpeak_rss_kb\tcpu_user_s\tcpu_sys_s\tcpu_pct\texit_code\tcommand\n' >> "$results_file"
 
 cat > "$config_file" <<CONFIG
 workspace=$workspace
@@ -297,11 +297,12 @@ record_timing() {
   local peak_rss_kb="$8"
   local cpu_user_s="$9"
   local cpu_sys_s="${10}"
-  local exit_code="${11}"
-  local command="${12}"
+  local cpu_pct="${11}"
+  local exit_code="${12}"
+  local command="${13}"
 
-  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-    "$dataset" "$rows" "$benchmark" "$variant" "$phase" "$run_id" "$elapsed" "$peak_rss_kb" "$cpu_user_s" "$cpu_sys_s" "$exit_code" "$command" >> "$results_file"
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$dataset" "$rows" "$benchmark" "$variant" "$phase" "$run_id" "$elapsed" "$peak_rss_kb" "$cpu_user_s" "$cpu_sys_s" "$cpu_pct" "$exit_code" "$command" >> "$results_file"
 }
 
 measure_phase() {
@@ -317,6 +318,7 @@ measure_phase() {
   local peak_rss_kb
   local cpu_user_s
   local cpu_sys_s
+  local cpu_pct
   local exit_code
   local run
 
@@ -324,69 +326,106 @@ measure_phase() {
 
   for ((run = 1; run <= count; run++)); do
     cleanup_outputs "$outdir"
-    IFS=$'\t' read -r elapsed peak_rss_kb cpu_user_s cpu_sys_s exit_code <<< "$(python - <<'PY' "$command"
+    IFS=$'\t' read -r elapsed peak_rss_kb cpu_user_s cpu_sys_s cpu_pct exit_code <<< "$(python - <<'PY' "$command"
 from __future__ import annotations
+import os
 import pathlib
-import re
 import resource
+import shutil
 import subprocess
 import sys
 import tempfile
 import time
 
 command = sys.argv[1]
-start = time.perf_counter()
+
+# Detect GNU time: check /usr/bin/time, gtime (macOS Homebrew), /usr/local/bin/gtime
+gnu_time_bin = None
+for candidate in ["/usr/bin/time", "gtime", "/usr/local/bin/gtime"]:
+    resolved = shutil.which(candidate)
+    if resolved:
+        try:
+            result = subprocess.run(
+                [resolved, "--version"],
+                capture_output=True, text=True, timeout=5,
+            )
+            if "GNU" in (result.stdout + result.stderr).upper():
+                gnu_time_bin = resolved
+                break
+        except (subprocess.TimeoutExpired, OSError):
+            continue
+
 peak_rss_kb = 0
 cpu_user_s = 0.0
 cpu_sys_s = 0.0
+cpu_pct = 0
 
-time_binary = pathlib.Path("/usr/bin/time")
-if time_binary.exists():
-    with tempfile.NamedTemporaryFile(delete=False) as metrics_file:
-        metrics_path = pathlib.Path(metrics_file.name)
+if gnu_time_bin:
+    # Use GNU time with format strings (more robust than -v + regex parsing)
+    # %e = wall clock (seconds), %M = max RSS (KB), %U = user CPU (seconds),
+    # %S = system CPU (seconds), %P = CPU percentage, %x = exit code
+    metrics_fd, metrics_path = tempfile.mkstemp(prefix="barrow_time_")
+    os.close(metrics_fd)
     try:
+        start = time.perf_counter()
         proc = subprocess.run(
-            [str(time_binary), "-v", "-o", str(metrics_path), "bash", "-lc", command],
+            [gnu_time_bin, "-f", "%e\t%M\t%U\t%S\t%P\t%x",
+             "-o", metrics_path,
+             "bash", "-lc", command],
             check=False,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-        metrics_text = metrics_path.read_text()
-    finally:
-        metrics_path.unlink(missing_ok=True)
+        end = time.perf_counter()
+        elapsed = end - start
 
-    rss_match = re.search(r"Maximum resident set size \\(kbytes\\):\\s*(\\d+)", metrics_text)
-    user_match = re.search(r"User time \\(seconds\\):\\s*([0-9]+(?:\\.[0-9]+)?)", metrics_text)
-    sys_match = re.search(r"System time \\(seconds\\):\\s*([0-9]+(?:\\.[0-9]+)?)", metrics_text)
-    if rss_match:
-        peak_rss_kb = int(rss_match.group(1))
-    if user_match:
-        cpu_user_s = float(user_match.group(1))
-    if sys_match:
-        cpu_sys_s = float(sys_match.group(1))
+        metrics_text = pathlib.Path(metrics_path).read_text().strip()
+        if metrics_text:
+            parts = metrics_text.split("\t")
+            if len(parts) >= 6:
+                # Use Python perf_counter for wall time (higher precision)
+                peak_rss_kb = int(parts[1]) if parts[1] else 0
+                cpu_user_s = float(parts[2]) if parts[2] else 0.0
+                cpu_sys_s = float(parts[3]) if parts[3] else 0.0
+                # cpu_pct may have trailing '%' or be '?'
+                pct_raw = parts[4].rstrip("%")
+                cpu_pct = int(pct_raw) if pct_raw.isdigit() else 0
+                exit_code = int(parts[5]) if parts[5].isdigit() else proc.returncode
+            else:
+                exit_code = proc.returncode
+        else:
+            exit_code = proc.returncode
+    finally:
+        pathlib.Path(metrics_path).unlink(missing_ok=True)
 else:
+    # Fallback: resource.getrusage for CPU/memory of child processes
     before = resource.getrusage(resource.RUSAGE_CHILDREN)
+    start = time.perf_counter()
     proc = subprocess.run(
         ["bash", "-lc", command],
         check=False,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
+    end = time.perf_counter()
+    elapsed = end - start
     after = resource.getrusage(resource.RUSAGE_CHILDREN)
     peak_rss_kb = int(after.ru_maxrss)
     cpu_user_s = max(0.0, after.ru_utime - before.ru_utime)
     cpu_sys_s = max(0.0, after.ru_stime - before.ru_stime)
-end = time.perf_counter()
-elapsed = end - start
-if proc.returncode != 0:
-    raise subprocess.CalledProcessError(proc.returncode, command)
-print(f"{elapsed:.6f}\t{peak_rss_kb}\t{cpu_user_s:.6f}\t{cpu_sys_s:.6f}\t{proc.returncode}")
+    cpu_total = cpu_user_s + cpu_sys_s
+    cpu_pct = int(cpu_total / elapsed * 100) if elapsed > 0 else 0
+    exit_code = proc.returncode
+
+if exit_code != 0:
+    raise subprocess.CalledProcessError(exit_code, command)
+print(f"{elapsed:.6f}\t{peak_rss_kb}\t{cpu_user_s:.6f}\t{cpu_sys_s:.6f}\t{cpu_pct}\t{exit_code}")
 PY
 )"
     record_timing "$dataset" "$rows" "$benchmark" "$variant" "$phase" "$run" \
-      "$elapsed" "$peak_rss_kb" "$cpu_user_s" "$cpu_sys_s" "$exit_code" "$command"
-    printf '[%s] rows=%-8s bench=%-10s variant=%-18s phase=%-6s run=%d/%d %ss rss=%skB user=%ss sys=%ss\n' \
-      "$dataset" "$rows" "$benchmark" "$variant" "$phase" "$run" "$count" "$elapsed" "$peak_rss_kb" "$cpu_user_s" "$cpu_sys_s"
+      "$elapsed" "$peak_rss_kb" "$cpu_user_s" "$cpu_sys_s" "$cpu_pct" "$exit_code" "$command"
+    printf '[%s] rows=%-8s bench=%-10s variant=%-18s phase=%-6s run=%d/%d %ss rss=%skB user=%ss sys=%ss cpu=%s%%\n' \
+      "$dataset" "$rows" "$benchmark" "$variant" "$phase" "$run" "$count" "$elapsed" "$peak_rss_kb" "$cpu_user_s" "$cpu_sys_s" "$cpu_pct"
   done
 }
 
@@ -607,6 +646,8 @@ for key in sorted(groups):
     item.update(stats([float(record["peak_rss_kb"]) for record in records], "peak_rss_kb"))
     item.update(stats([float(record["cpu_user_s"]) for record in records], "cpu_user_s"))
     item.update(stats([float(record["cpu_sys_s"]) for record in records], "cpu_sys_s"))
+    if "cpu_pct" in records[0]:
+        item.update(stats([float(record["cpu_pct"]) for record in records], "cpu_pct"))
     summary_rows.append(item)
 
 hot_by_benchmark = defaultdict(list)
@@ -739,14 +780,15 @@ for key in sorted(hot_by_benchmark):
     lines.append("")
     lines.append(f"### {dataset} / {benchmark} ({rows_count} rows)")
     lines.append("")
-    lines.append("| Rank | Variant | Avg (s) | Median (s) | Min (s) | Max (s) | Stdev (s) | Avg RSS (kB) | Avg user (s) | Avg sys (s) |")
-    lines.append("| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
+    lines.append("| Rank | Variant | Avg (s) | Median (s) | Min (s) | Max (s) | Stdev (s) | Avg RSS (kB) | Avg user (s) | Avg sys (s) | Avg CPU% |")
+    lines.append("| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
     ordered = sorted(hot_by_benchmark[key], key=lambda item: item["avg_seconds"])
     for position, item in enumerate(ordered, start=1):
+        cpu_pct_str = f"{item['avg_cpu_pct']:.0f}" if "avg_cpu_pct" in item else "N/A"
         lines.append(
             f"| {position} | {item['variant']} | {item['avg_seconds']:.6f} | {item['median_seconds']:.6f} | "
             f"{item['min_seconds']:.6f} | {item['max_seconds']:.6f} | {item['stdev_seconds']:.6f} | "
-            f"{item['avg_peak_rss_kb']:.0f} | {item['avg_cpu_user_s']:.6f} | {item['avg_cpu_sys_s']:.6f} |"
+            f"{item['avg_peak_rss_kb']:.0f} | {item['avg_cpu_user_s']:.6f} | {item['avg_cpu_sys_s']:.6f} | {cpu_pct_str} |"
         )
 lines.append("")
 lines.append("## SQL vs command comparisons")
@@ -765,13 +807,14 @@ else:
 lines.append("")
 lines.append("## Raw aggregates")
 lines.append("")
-lines.append("| Dataset | Rows | Benchmark | Variant | Phase | Runs | Avg (s) | Median (s) | Min (s) | Max (s) | Stdev (s) | Avg RSS (kB) | Avg user (s) | Avg sys (s) | Exit codes |")
-lines.append("| --- | ---: | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |")
+lines.append("| Dataset | Rows | Benchmark | Variant | Phase | Runs | Avg (s) | Median (s) | Min (s) | Max (s) | Stdev (s) | Avg RSS (kB) | Avg user (s) | Avg sys (s) | Avg CPU% | Exit codes |")
+lines.append("| --- | ---: | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |")
 for item in summary_rows:
+    cpu_pct_str = f"{item['avg_cpu_pct']:.0f}" if "avg_cpu_pct" in item else "N/A"
     lines.append(
         f"| {item['dataset']} | {item['rows']} | {item['benchmark']} | {item['variant']} | {item['phase']} | {item['runs']} | "
         f"{item['avg_seconds']:.6f} | {item['median_seconds']:.6f} | {item['min_seconds']:.6f} | {item['max_seconds']:.6f} | {item['stdev_seconds']:.6f} | "
-        f"{item['avg_peak_rss_kb']:.0f} | {item['avg_cpu_user_s']:.6f} | {item['avg_cpu_sys_s']:.6f} | "
+        f"{item['avg_peak_rss_kb']:.0f} | {item['avg_cpu_user_s']:.6f} | {item['avg_cpu_sys_s']:.6f} | {cpu_pct_str} | "
         f"{','.join(str(code) for code in item['exit_codes'])} |"
     )
 summary_path.write_text("\n".join(lines) + "\n")
