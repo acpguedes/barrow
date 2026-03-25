@@ -183,7 +183,7 @@ def run_analysis(df: pd.DataFrame, has_resources: bool) -> dict:
                     {
                         "dataset": ds,
                         "mean_s": round(ds_data["seconds"].mean(), 4),
-                        "rows": int(ds_data["rows"].iloc[0]),
+                        "rows": int(ds_data["rows"].iloc[0]) if pd.notna(ds_data["rows"].iloc[0]) else 0,
                     }
                 )
         if len(sizes) >= 2:

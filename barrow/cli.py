@@ -92,8 +92,6 @@ def _add_io_options(parser: argparse.ArgumentParser) -> None:
         if args.tmp:
             if args.output_format is None:
                 args.output_format = "feather"
-            if args.input is None and args.input_format is None:
-                args.input_format = "feather"
         if args.output_format is None:
             if args.input_format is not None:
                 args.output_format = args.input_format

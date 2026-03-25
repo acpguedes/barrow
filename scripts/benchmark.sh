@@ -417,8 +417,6 @@ else:
     cpu_pct = int(cpu_total / elapsed * 100) if elapsed > 0 else 0
     exit_code = proc.returncode
 
-if exit_code != 0:
-    raise subprocess.CalledProcessError(exit_code, command)
 print(f"{elapsed:.6f}\t{peak_rss_kb}\t{cpu_user_s:.6f}\t{cpu_sys_s:.6f}\t{cpu_pct}\t{exit_code}")
 PY
 )"
@@ -614,8 +612,17 @@ for row in rows:
     key = (row["dataset"], row["rows"], row["benchmark"], row["variant"], row["phase"])
     groups[key].append(row)
 
-def stats(values: list[float], prefix: str) -> dict[str, float | int]:
-    values = sorted(values)
+def stats(raw_values: list[float], prefix: str) -> dict[str, float | int]:
+    values = sorted(v for v in raw_values if not math.isnan(v))
+    if not values:
+        return {
+            "runs": 0,
+            f"avg_{prefix}": 0.0,
+            f"median_{prefix}": 0.0,
+            f"min_{prefix}": 0.0,
+            f"max_{prefix}": 0.0,
+            f"stdev_{prefix}": 0.0,
+        }
     mean = statistics.fmean(values)
     median = statistics.median(values)
     minimum = values[0]
@@ -630,24 +637,36 @@ def stats(values: list[float], prefix: str) -> dict[str, float | int]:
         f"stdev_{prefix}": stdev,
     }
 
+def safe_int(v, default=0):
+    try:
+        return int(v)
+    except (ValueError, TypeError):
+        return default
+
+def safe_float(v, default=float('nan')):
+    try:
+        return float(v)
+    except (ValueError, TypeError):
+        return default
+
 summary_rows = []
 for key in sorted(groups):
     dataset, nrows, benchmark, variant, phase = key
     records = groups[key]
     item = {
         "dataset": dataset,
-        "rows": int(nrows),
+        "rows": safe_int(nrows),
         "benchmark": benchmark,
         "variant": variant,
         "phase": phase,
-        "exit_codes": sorted({int(record["exit_code"]) for record in records}),
+        "exit_codes": sorted({safe_int(record["exit_code"], -1) for record in records}),
     }
-    item.update(stats([float(record["seconds"]) for record in records], "seconds"))
-    item.update(stats([float(record["peak_rss_kb"]) for record in records], "peak_rss_kb"))
-    item.update(stats([float(record["cpu_user_s"]) for record in records], "cpu_user_s"))
-    item.update(stats([float(record["cpu_sys_s"]) for record in records], "cpu_sys_s"))
+    item.update(stats([safe_float(record["seconds"]) for record in records], "seconds"))
+    item.update(stats([safe_float(record["peak_rss_kb"]) for record in records], "peak_rss_kb"))
+    item.update(stats([safe_float(record["cpu_user_s"]) for record in records], "cpu_user_s"))
+    item.update(stats([safe_float(record["cpu_sys_s"]) for record in records], "cpu_sys_s"))
     if "cpu_pct" in records[0]:
-        item.update(stats([float(record["cpu_pct"]) for record in records], "cpu_pct"))
+        item.update(stats([safe_float(record["cpu_pct"]) for record in records], "cpu_pct"))
     summary_rows.append(item)
 
 hot_by_benchmark = defaultdict(list)
