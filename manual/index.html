@@ -1,0 +1,855 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../usage/">
+      
+      
+        <link rel="next" href="../architecture/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Manual - Barrow</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#manual" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Barrow" class="md-header__button md-logo" aria-label="Barrow" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Barrow
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Manual
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Barrow" class="md-nav__button md-logo" aria-label="Barrow" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Barrow
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manual
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manual
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#common-io-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common I/O options
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        filter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#select" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        select
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mutate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mutate
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#groupby" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        groupby
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ungroup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ungroup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#join" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        join
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#view" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        view
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sort" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sort
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sql
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#window" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        window
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#explain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        explain
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#benchmark-de-comandos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Benchmark de comandos
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#common-io-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common I/O options
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        filter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#select" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        select
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mutate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mutate
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#groupby" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        groupby
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ungroup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ungroup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#join" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        join
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#view" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        view
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sort" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sort
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sql
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#window" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        window
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#explain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        explain
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#benchmark-de-comandos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Benchmark de comandos
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="manual">Manual</h1>
+<p><code>barrow</code> provides subcommands for working with tabular data. Each command can read from <code>STDIN</code> or a file and write to <code>STDOUT</code> or a file.</p>
+<h2 id="common-io-options">Common I/O options</h2>
+<ul>
+<li><code>-i</code>, <code>--input PATH</code> – input file. Reads <code>STDIN</code> if omitted.</li>
+<li><code>--input-format {csv,parquet,feather,orc}</code> – format of the input file.</li>
+<li><code>-o</code>, <code>--output PATH</code> – output file. Writes to <code>STDOUT</code> if omitted.</li>
+<li><code>--output-format {csv,parquet,feather,orc}</code> – format of the output. Defaults to the input format and is ignored by <code>view</code>.</li>
+<li><code>--csv</code>, <code>--parquet</code>, <code>--feather</code>, <code>--orc</code> – shortcut flags to set the output format.</li>
+<li><code>--delimiter CHAR</code> – field delimiter for CSV input; also used for output unless <code>--csv-out-delimiter</code> is given.</li>
+<li><code>--csv-out-delimiter CHAR</code> – field delimiter for CSV output.</li>
+<li><code>--tmp</code> – write intermediate results to Feather when using pipes for faster processing.</li>
+</ul>
+<h2 id="filter">filter</h2>
+<p>Filter rows using a boolean expression.</p>
+<pre><code>barrow filter &quot;score &gt; 80&quot; -i data.csv -o filtered.csv
+</code></pre>
+<h2 id="select">select</h2>
+<p>Select a comma-separated list of columns.</p>
+<pre><code>barrow select &quot;name,score&quot; -i data.csv -o subset.csv
+</code></pre>
+<h2 id="mutate">mutate</h2>
+<p>Add or modify columns with <code>NAME=EXPR</code> pairs.</p>
+<pre><code>barrow mutate &quot;total=price*qty&quot; -i sales.csv -o extended.csv
+</code></pre>
+<h2 id="groupby">groupby</h2>
+<p>Group rows by columns.</p>
+<pre><code>barrow groupby category -i sales.csv | barrow summary &quot;revenue=sum(total)&quot;
+</code></pre>
+<p>Grouped data keeps track of the grouping so that subsequent operations like <code>summary</code> can aggregate correctly.</p>
+<h2 id="summary">summary</h2>
+<p>Aggregate a grouped table with <code>COLUMN=AGG</code> pairs.</p>
+<pre><code>barrow groupby category -i sales.csv | barrow summary &quot;revenue=sum(total)&quot;
+</code></pre>
+<h2 id="ungroup">ungroup</h2>
+<p>Remove grouping metadata.</p>
+<pre><code>barrow groupby category -i data.csv | barrow ungroup
+</code></pre>
+<h2 id="join">join</h2>
+<p>Join two tables on key columns.</p>
+<pre><code>barrow join id id --right other.csv -i left.csv -o joined.csv
+</code></pre>
+<p>Additional options:</p>
+<ul>
+<li><code>--right PATH</code> – right input file.</li>
+<li><code>--right-format {csv,parquet,feather,orc}</code> – format of the right file.</li>
+<li><code>--join-type {inner,left,right,outer}</code> – type of join (default <code>inner</code>).</li>
+</ul>
+<h2 id="view">view</h2>
+<p>Display a table in CSV format to <code>STDOUT</code> for inspection.</p>
+<pre><code>barrow view -i data.parquet
+</code></pre>
+<p><code>view</code> accepts <code>--output-format</code> for API compatibility but always writes CSV to <code>STDOUT</code>.</p>
+<h2 id="sort">sort</h2>
+<p>Sort rows by column values.</p>
+<pre><code>barrow sort COLUMNS [options]
+</code></pre>
+<p>COLUMNS: comma-separated column names to sort by.</p>
+<ul>
+<li><code>--desc</code>: sort in descending order.</li>
+</ul>
+<pre><code>barrow sort 'name,age' -i people.csv
+</code></pre>
+<pre><code>barrow sort 'age' --desc -i people.csv -o sorted.csv
+</code></pre>
+<h2 id="sql">sql</h2>
+<p>Execute a SQL query.</p>
+<pre><code>barrow sql QUERY [options]
+</code></pre>
+<p>QUERY: SQL query where the input table is named <code>tbl</code>.</p>
+<pre><code>barrow sql 'SELECT name, age FROM tbl WHERE age &gt; 30' -i people.csv
+</code></pre>
+<pre><code>barrow sql 'SELECT grp, SUM(a) AS total FROM tbl GROUP BY grp' -i data.csv
+</code></pre>
+<h2 id="window">window</h2>
+<p>Apply window functions.</p>
+<pre><code>barrow window ASSIGNMENTS [--by COLS] [--order-by COLS] [options]
+</code></pre>
+<p>ASSIGNMENTS: comma-separated <code>NAME=EXPR</code> pairs.</p>
+<ul>
+<li><code>--by</code>: partition columns (comma-separated).</li>
+<li><code>--order-by</code>: order columns within partitions (comma-separated).</li>
+</ul>
+<pre><code>barrow window 'rn=row_number()' --by grp --order-by val -i data.csv
+</code></pre>
+<pre><code>barrow window 'ma=rolling_mean(value, 3)' --order-by date -i timeseries.csv
+</code></pre>
+<h2 id="explain">explain</h2>
+<p>Show execution plan.</p>
+<pre><code>barrow explain COMMAND [EXPRESSION] [options]
+</code></pre>
+<p>COMMAND: the command to explain (filter, select, sort, etc.).
+EXPRESSION: the expression or columns for that command.</p>
+<pre><code>barrow explain filter 'age &gt; 30' -i people.csv
+</code></pre>
+<h2 id="benchmark-de-comandos">Benchmark de comandos</h2>
+<p>Para comparar operações individuais e pipelines completos, use <code>scripts/benchmark.sh</code>. O script cria automaticamente arquivos CSV determinísticos de teste, aceita os datasets opcionais <code>tiny</code> e <code>xlarge</code> além dos tamanhos padrão <code>small</code>, <code>medium</code> e <code>large</code>, mede variações em fases explícitas de <code>cold</code>, <code>warmup</code> e <code>hot</code>, usa o mesmo total de <code>--iterations</code> para cada fase habilitada de uma variante, adiciona equivalentes em SQL para as operações básicas quando fizer sentido, captura tempo total, pico de memória RSS e tempo de CPU, e registra os tempos detalhados em <code>results.tsv</code>, além de gerar <code>summary.md</code> e <code>summary.json</code> no diretório de trabalho escolhido.</p>
+<pre><code class="language-bash">scripts/benchmark.sh --datasets small,medium --iterations 5
+scripts/benchmark.sh --datasets tiny,xlarge --only filter,pipeline --iterations 2
+</code></pre>
+<p>Se quiser focar em grupos específicos, use <code>--only</code>, por exemplo <code>--only filter,sql,pipeline</code>. Use <code>--warmup</code> e <code>--cold-runs</code> para habilitar ou desabilitar as fases preparatórias, <code>--iterations</code> para controlar quantas execuções cada fase habilitada registra por variante, <code>--sizes</code> para sobrescrever os row counts usando <code>small:medium:large</code> ou <code>tiny:small:medium:large:xlarge</code>, e <code>--cleanup</code> para remover os artefatos gerados ao final mantendo os resultados e summaries.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
